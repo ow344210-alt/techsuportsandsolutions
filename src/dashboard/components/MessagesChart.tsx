@@ -1,6 +1,6 @@
 import { Activity } from "lucide-react";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext.types";
 import type { DailyCount } from "../../lib/dashboardStats";
 
 interface MessagesChartProps {

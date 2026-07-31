@@ -1,14 +1,7 @@
-// Consistent label+input styling for every admin form field.
 import type { ReactNode } from "react";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext.types";
 
-interface FormFieldProps {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}
-
-export function FormField({ label, hint, children }: FormFieldProps) {
+export function FormField({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
 
@@ -21,10 +14,4 @@ export function FormField({ label, hint, children }: FormFieldProps) {
   );
 }
 
-export function inputClass(isDarkTheme: boolean) {
-  return `w-full rounded-xl border px-3 py-2.5 outline-none transition ${
-    isDarkTheme
-      ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500"
-      : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"
-  }`;
-}
+

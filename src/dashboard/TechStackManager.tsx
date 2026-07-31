@@ -2,20 +2,18 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import toast from "react-hot-toast";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
 import { createTech, deleteTech, fetchTechForAdmin, swapTechOrder, updateTech } from "../lib/techStack";
 import type { TechItem, TechItemPayload } from "../lib/techStack";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
-import { FormField, inputClass } from "./components/FormField";
-
+import { FormField } from "./components/FormField";
+import { inputClass } from "./components/FormField.utils";
 const EMPTY_FORM: TechItemPayload = { name: "", category: "General", is_active: true };
-
 export default function TechStackManager() {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
-
   const [items, setItems] = useState<TechItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -24,41 +22,37 @@ export default function TechStackManager() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
-
   useEffect(() => {
-    void loadItems();
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await fetchTechForAdmin();
+        if (mounted) setItems(data);
+      } catch {
+        if (mounted) toast.error("Unable to load tech stack.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
-
-  async function loadItems() {
-    setLoading(true);
-    try {
-      setItems(await fetchTechForAdmin());
-    } catch {
-      toast.error("Unable to load tech stack.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   function openAddForm() {
     setEditingItem(null);
     setForm(EMPTY_FORM);
     setIsFormOpen(true);
   }
-
   function openEditForm(item: TechItem) {
     setEditingItem(item);
     setForm({ name: item.name, category: item.category, is_active: item.is_active });
     setIsFormOpen(true);
   }
-
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.name.trim()) {
       toast.error("Name is required.");
       return;
     }
-
     setSaving(true);
     try {
       if (editingItem) {
@@ -78,7 +72,6 @@ export default function TechStackManager() {
       setSaving(false);
     }
   }
-
   async function handleDelete(id: string) {
     if (!window.confirm("Delete this technology?")) return;
     setDeletingId(id);
@@ -92,11 +85,9 @@ export default function TechStackManager() {
       setDeletingId(null);
     }
   }
-
   async function handleReorder(index: number, direction: "up" | "down") {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= items.length) return;
-
     const current = items[index];
     const target = items[targetIndex];
     setReorderingId(current.id);
@@ -113,7 +104,6 @@ export default function TechStackManager() {
       setReorderingId(null);
     }
   }
-
   async function toggleActive(item: TechItem) {
     try {
       const updated = await updateTech(item.id, { name: item.name, category: item.category, is_active: !item.is_active });
@@ -122,11 +112,9 @@ export default function TechStackManager() {
       toast.error("Unable to update.");
     }
   }
-
   return (
     <div className="space-y-6">
       <AdminPageHeader title="Tech Stack" subtitle="Manage the technology badges shown on the homepage." actionLabel="Add Technology" onAction={openAddForm} />
-
       <div className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${isDarkTheme ? "border-white/10 bg-slate-900/70" : "border-slate-200 bg-white"}`}>
         {loading ? (
           <div className={`px-4 py-10 text-center text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>Loading...</div>
@@ -157,7 +145,6 @@ export default function TechStackManager() {
           </ul>
         )}
       </div>
-
       {isFormOpen && (
         <AdminFormModal title={editingItem ? "Edit Technology" : "Add Technology"} onClose={() => setIsFormOpen(false)} onSubmit={handleSubmit} saving={saving}>
           <FormField label="Name">
@@ -175,3 +162,4 @@ export default function TechStackManager() {
     </div>
   );
 }
+

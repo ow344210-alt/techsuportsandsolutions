@@ -2,18 +2,39 @@
 // newsletter signup are all dynamic — Quick Links via footer_links table,
 // Services pulled live from the same services table used across the site
 // (no duplicate data entry), contact/social shared with the Contact page's
-// "contact-info" content section.
+// "contact-info" content section. Real fallbacks keep every column populated
+// even before the CMS has content published.
 import { useEffect, useState } from "react";
 import logo from "../assets/tech-supports-logo.png";
-import { Mail, ArrowUp, Heart, Send, Loader2, Phone as PhoneIcon } from "lucide-react";
+import { Mail, Phone as PhoneIcon, MapPin, Clock, ArrowUp, Heart, Send } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useSiteContent } from "../hooks/useSiteContent";
 import { useFooterLinks } from "../hooks/useFooterLinks";
+import { NAV_LINKS } from "../config/nav.config";
 import { fetchActiveServices } from "../lib/services";
 import type { Service } from "../lib/services";
 import { subscribeToNewsletter } from "../lib/newsletter";
+import Button from "./ui/Button";
+
+// Shown only while the CMS has no active footer links — mirrors every main
+// navigation route so the column is never empty.
+const FALLBACK_QUICK_LINKS: Array<{ label: string; url: string }> = NAV_LINKS.map((link) => ({
+  label: link.name,
+  url: link.href,
+}));
+
+// Shown only while the CMS has no published services — matches the service
+// names used across the site so the column is never empty.
+const FALLBACK_SERVICES: string[] = [
+  "Web Development",
+  "Mobile App Development",
+  "Software Development",
+  "UI/UX Design",
+  "Digital Marketing",
+  "Cloud & IT Services",
+];
 
 function formatSocialHandle(url: string) {
   try {
@@ -38,6 +59,12 @@ function Footer() {
   const { content: contactInfo } = useSiteContent("contact-info", {
     email: "techsupportsandsolutions@gmail.com",
     phone: "0327-8226689",
+    address: "Mashriq Centre Karachi",
+    working_days: "Monday - Friday",
+    working_hours: "9:00 AM - 6:00 PM",
+    weekend_days: "Saturday",
+    weekend_hours: "10:00 AM - 4:00 PM",
+    sunday_status: "Closed",
     facebook_url: "",
     instagram_url: "https://www.instagram.com/techsupportsandsolutions/",
     linkedin_url: "",
@@ -47,6 +74,7 @@ function Footer() {
   const { links: quickLinks, loading: linksLoading } = useFooterLinks();
 
   const [services, setServices] = useState<Service[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
 
@@ -56,9 +84,11 @@ function Footer() {
     async function loadServices() {
       try {
         const data = await fetchActiveServices();
-        if (isMounted) setServices(data.slice(0, 5));
+        if (isMounted) setServices(data);
       } catch {
         // Silently ignore on public page
+      } finally {
+        if (isMounted) setServicesLoading(false);
       }
     }
 
@@ -102,6 +132,16 @@ function Footer() {
     { url: contactInfo.twitter_url, icon: FaTwitter, label: "Twitter" },
   ].filter((s) => s.url && s.url.trim().length > 0);
 
+  const quickLinksToShow: Array<{ id?: string; label: string; url: string }> =
+    quickLinks.length > 0
+      ? quickLinks.map((link) => ({ id: link.id, label: link.label, url: link.url }))
+      : FALLBACK_QUICK_LINKS;
+
+  const servicesToShow: Array<{ key: string; title: string }> =
+    services.length > 0
+      ? services.map((service) => ({ key: service.id, title: service.title }))
+      : FALLBACK_SERVICES.map((title, index) => ({ key: `fallback-${index}`, title }));
+
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-[#050B16] text-white">
       {/* Background Glow */}
@@ -129,33 +169,32 @@ function Footer() {
               placeholder="Enter your email"
               className="w-full min-w-0 rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400"
             />
-            <button
+            <Button
               type="submit"
-              disabled={subscribing}
-              className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              size="md"
+              loading={subscribing}
+              loadingText="Subscribing..."
+              icon={<Send size={16} />}
+              className="shrink-0"
             >
-              {subscribing ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Send size={16} />
-              )}
-              <span>Subscribe</span>
-            </button>
+              Subscribe
+            </Button>
           </form>
         </div>
 
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-4">
           {/* Company */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <img
-              src={logo}
-              alt="Tech Supports & Solutions"
-              className="mb-5 h-16 w-auto object-contain sm:h-20"
-            />
+            <Link to="/" aria-label="Tech Supports & Solutions home" className="inline-block">
+              <img
+                src={logo}
+                alt="Tech Supports & Solutions"
+                className="mb-5 h-16 w-auto object-contain sm:h-20"
+              />
+            </Link>
             <p className="max-w-sm text-sm leading-7 text-gray-400 sm:text-base sm:leading-8">
               {content.description}
             </p>
-
           </div>
 
           {/* Quick Links */}
@@ -172,8 +211,8 @@ function Footer() {
               </div>
             ) : (
               <ul className="space-y-3 text-sm text-gray-400 sm:space-y-4 sm:text-base">
-                {quickLinks.map((link) => (
-                  <li key={link.id}>
+                {quickLinksToShow.map((link) => (
+                  <li key={link.id ?? link.url}>
                     {link.url.startsWith("http") ? (
                       <a
                         href={link.url}
@@ -200,14 +239,19 @@ function Footer() {
           {/* Services — live from database, no duplicate entry needed */}
           <div>
             <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Services</h3>
-            {services.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                Services will appear here soon.
-              </p>
+            {servicesLoading ? (
+              <div className="space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-4 w-24 animate-pulse rounded bg-white/5"
+                  />
+                ))}
+              </div>
             ) : (
               <ul className="space-y-3 text-sm text-gray-400 sm:space-y-4 sm:text-base">
-                {services.map((service) => (
-                  <li key={service.id}>
+                {servicesToShow.map((service) => (
+                  <li key={service.key}>
                     <Link
                       to="/services"
                       className="transition hover:text-purple-400"
@@ -223,21 +267,31 @@ function Footer() {
           {/* Contact */}
           <div>
             <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Contact</h3>
-            <div className="space-y-4">
+            <div className="space-y-4 text-sm text-gray-400">
               <a
                 href={`mailto:${contactInfo.email}`}
-                className="flex items-start gap-3 text-gray-400 transition hover:text-purple-400"
+                className="flex items-start gap-3 transition hover:text-purple-400"
               >
                 <Mail size={18} className="mt-0.5 shrink-0" />
-                <span className="min-w-0 break-all text-sm">{contactInfo.email}</span>
+                <span className="min-w-0 break-all">{contactInfo.email}</span>
               </a>
               <a
                 href={`tel:${contactInfo.phone}`}
-                className="flex items-center gap-3 text-gray-400 transition hover:text-purple-400"
+                className="flex items-center gap-3 transition hover:text-purple-400"
               >
                 <PhoneIcon size={18} className="shrink-0" />
-                <span className="text-sm">{contactInfo.phone}</span>
+                <span className="min-w-0 break-words">{contactInfo.phone}</span>
               </a>
+              <p className="flex items-start gap-3">
+                <MapPin size={18} className="mt-0.5 shrink-0" />
+                <span className="min-w-0 break-words">{contactInfo.address}</span>
+              </p>
+              <p className="flex items-start gap-3">
+                <Clock size={18} className="mt-0.5 shrink-0" />
+                <span className="min-w-0 break-words">
+                  {contactInfo.working_days}: {contactInfo.working_hours}
+                </span>
+              </p>
 
               {socialLinks.map((social) => {
                 const Icon = social.icon;
@@ -266,13 +320,14 @@ function Footer() {
             All Rights Reserved.
           </p>
 
-          <a
-            href="#home"
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             aria-label="Back to top"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-500 transition duration-300 hover:scale-110"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 transition duration-300 hover:scale-110"
           >
             <ArrowUp size={20} />
-          </a>
+          </button>
         </div>
       </div>
     </footer>

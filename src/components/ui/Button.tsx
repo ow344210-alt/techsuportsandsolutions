@@ -2,7 +2,7 @@
 // same height, radius, typography, transitions, and responsive behavior —
 // only color/intent varies via the `variant` prop. This replaces the
 // inconsistent one-off button classNames scattered across pages.
-import type { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes } from "react";
+import React, { type ReactNode, type ButtonHTMLAttributes, type AnchorHTMLAttributes } from "react";
 import { Link } from "react-router-dom";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "danger" | "ghost";
@@ -22,9 +22,9 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: "px-4 py-2 text-sm rounded-lg gap-1.5",
-  md: "px-6 py-3 text-sm rounded-xl gap-2",
-  lg: "px-8 py-4 text-base rounded-xl gap-2.5",
+  sm: "px-4 py-2 text-sm gap-1.5",
+  md: "px-6 py-3 text-sm gap-2",
+  lg: "px-8 py-4 text-base gap-2.5",
 };
 
 const BASE_CLASSES =
@@ -36,6 +36,9 @@ interface CommonProps {
   fullWidth?: boolean;
   icon?: ReactNode;
   iconPosition?: "left" | "right";
+  loading?: boolean;
+  loadingText?: string;
+  disabled?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -44,7 +47,7 @@ interface CommonProps {
 interface LinkButtonProps extends CommonProps {
   to: string;
   href?: never;
-  onClick?: never;
+  onClick?: () => void;
 }
 
 // Renders as external link
@@ -61,50 +64,95 @@ interface NativeButtonProps extends CommonProps, Omit<ButtonHTMLAttributes<HTMLB
 
 type ButtonProps = LinkButtonProps | AnchorButtonProps | NativeButtonProps;
 
-export default function Button(props: ButtonProps) {
-  const {
-    variant = "primary",
-    size = "md",
-    fullWidth = false,
-    icon,
-    iconPosition = "right",
-    children,
-    className = "",
-  } = props;
+type ButtonRef = HTMLButtonElement;
 
-  const classes = `${BASE_CLASSES} ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${
+function getButtonClasses(
+  variant: ButtonVariant,
+  size: ButtonSize,
+  fullWidth: boolean | undefined,
+  className: string | undefined,
+  loading: boolean | undefined,
+): string {
+  return `${BASE_CLASSES} ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${
     fullWidth ? "w-full" : ""
-  } ${className}`;
+  } ${loading ? "cursor-wait" : ""} ${className ?? ""}`;
+}
 
-  const content = (
+function getContent(
+  icon: ReactNode | undefined,
+  iconPosition: "left" | "right" | undefined,
+  children: ReactNode,
+  loading: boolean | undefined,
+  loadingText: string | undefined,
+): ReactNode {
+  if (loading) {
+    return (
+      <>
+        {icon && iconPosition === "left" && icon}
+        {loadingText ?? children}
+        {icon && iconPosition === "right" && icon}
+      </>
+    );
+  }
+  return (
     <>
       {icon && iconPosition === "left" && icon}
       {children}
       {icon && iconPosition === "right" && icon}
     </>
   );
-
-  if ("to" in props && props.to) {
-    return (
-      <Link to={props.to} className={classes}>
-        {content}
-      </Link>
-    );
-  }
-
-  if ("href" in props && props.href) {
-    const { variant: _v, size: _s, fullWidth: _fw, icon: _i, iconPosition: _ip, children: _c, className: _cl, to: _t, href, ...anchorProps } = props;
-    return (
-      <a href={href} className={classes} {...anchorProps}>
-        {content}
-      </a>
-    );
-  }
-
-  const { variant: _v2, size: _s2, fullWidth: _fw2, icon: _i2, iconPosition: _ip2, children: _c2, className: _cl2, to: _t2, href: _h2, ...buttonProps } = props as NativeButtonProps;
-  return (
-    <button className={classes} {...buttonProps}>
-      {content}
-    </button>
-  );
 }
+
+const Button = /* @__PURE__ */ React.forwardRef<ButtonRef, ButtonProps>(
+  function Button(props, ref) {
+    const {
+      variant = "primary",
+      size = "md",
+      fullWidth = false,
+      icon,
+      iconPosition = "right",
+      loading = false,
+      loadingText,
+      children,
+      className = "",
+      disabled,
+      to,
+      href,
+      ...rest
+    } = props;
+
+    const classes = getButtonClasses(variant, size, fullWidth, className, loading);
+    const isDisabled = disabled ?? loading;
+
+    const content = getContent(icon, iconPosition, children, loading, loadingText);
+
+    if (to) {
+      const linkProps = rest as AnchorHTMLAttributes<HTMLAnchorElement>;
+      return (
+        <Link to={to} className={classes} onClick={linkProps.onClick}>
+          {content}
+        </Link>
+      );
+    }
+
+    if (href) {
+      const anchorProps = rest as AnchorHTMLAttributes<HTMLAnchorElement>;
+      return (
+        <a href={href} className={classes} {...anchorProps}>
+          {content}
+        </a>
+      );
+    }
+
+    const buttonProps = rest as ButtonHTMLAttributes<HTMLButtonElement>;
+    return (
+      <button ref={ref} className={classes} disabled={isDisabled} {...buttonProps}>
+        {content}
+      </button>
+    );
+  },
+);
+
+Button.displayName = "Button";
+
+export default Button;

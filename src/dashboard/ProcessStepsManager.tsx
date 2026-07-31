@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import toast from "react-hot-toast";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
 import {
   createStep,
   deleteStep,
@@ -13,8 +13,8 @@ import type { ProcessStep, ProcessStepPayload } from "../lib/processSteps";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
-import { FormField, inputClass } from "./components/FormField";
-
+import { FormField } from "./components/FormField";
+import { inputClass } from "./components/FormField.utils";
 const EMPTY_FORM: ProcessStepPayload = {
   title: "",
   purpose: "",
@@ -24,11 +24,9 @@ const EMPTY_FORM: ProcessStepPayload = {
   client_involvement: "",
   is_active: true,
 };
-
 export default function ProcessStepsManager() {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
-
   const [steps, setSteps] = useState<ProcessStep[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -37,28 +35,26 @@ export default function ProcessStepsManager() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
-
   useEffect(() => {
-    void loadSteps();
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await fetchStepsForAdmin();
+        if (mounted) setSteps(data);
+      } catch {
+        if (mounted) toast.error("Unable to load process steps.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
-
-  async function loadSteps() {
-    setLoading(true);
-    try {
-      setSteps(await fetchStepsForAdmin());
-    } catch {
-      toast.error("Unable to load process steps.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   function openAddForm() {
     setEditingStep(null);
     setForm(EMPTY_FORM);
     setIsFormOpen(true);
   }
-
   function openEditForm(step: ProcessStep) {
     setEditingStep(step);
     setForm({
@@ -72,14 +68,12 @@ export default function ProcessStepsManager() {
     });
     setIsFormOpen(true);
   }
-
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.title.trim()) {
       toast.error("Title is required.");
       return;
     }
-
     setSaving(true);
     try {
       if (editingStep) {
@@ -99,7 +93,6 @@ export default function ProcessStepsManager() {
       setSaving(false);
     }
   }
-
   async function handleDelete(id: string) {
     if (!window.confirm("Delete this process step?")) return;
     setDeletingId(id);
@@ -113,11 +106,9 @@ export default function ProcessStepsManager() {
       setDeletingId(null);
     }
   }
-
   async function handleReorder(index: number, direction: "up" | "down") {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= steps.length) return;
-
     const current = steps[index];
     const target = steps[targetIndex];
     setReorderingId(current.id);
@@ -134,7 +125,6 @@ export default function ProcessStepsManager() {
       setReorderingId(null);
     }
   }
-
   async function toggleActive(step: ProcessStep) {
     try {
       const updated = await updateStep(step.id, {
@@ -151,7 +141,6 @@ export default function ProcessStepsManager() {
       toast.error("Unable to update this step.");
     }
   }
-
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -160,7 +149,6 @@ export default function ProcessStepsManager() {
         actionLabel="Add Step"
         onAction={openAddForm}
       />
-
       <div className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${isDarkTheme ? "border-white/10 bg-slate-900/70" : "border-slate-200 bg-white"}`}>
         {loading ? (
           <div className={`px-4 py-10 text-center text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>Loading steps...</div>
@@ -176,7 +164,6 @@ export default function ProcessStepsManager() {
                   </p>
                   <p className={`mt-1 line-clamp-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-500"}`}>{step.purpose}</p>
                 </div>
-
                 <AdminRowActions
                   canMoveUp={index !== 0}
                   canMoveDown={index !== steps.length - 1}
@@ -194,7 +181,6 @@ export default function ProcessStepsManager() {
           </ul>
         )}
       </div>
-
       {isFormOpen && (
         <AdminFormModal title={editingStep ? "Edit Step" : "Add Step"} onClose={() => setIsFormOpen(false)} onSubmit={handleSubmit} saving={saving}>
           <FormField label="Title">
@@ -224,3 +210,4 @@ export default function ProcessStepsManager() {
     </div>
   );
 }
+

@@ -1,21 +1,19 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import toast from "react-hot-toast";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
 import { createFaq, deleteFaq, fetchFaqsForAdmin, swapFaqOrder, updateFaq } from "../lib/faqs";
 import type { Faq, FaqPayload } from "../lib/faqs";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
-import { FormField, inputClass } from "./components/FormField";
-
+import { FormField } from "./components/FormField";
+import { inputClass } from "./components/FormField.utils";
 const PAGES = ["home", "contact-faq"];
 const EMPTY_FORM: FaqPayload = { question: "", answer: "", is_active: true };
-
 export default function FaqManager() {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
-
   const [page, setPage] = useState(PAGES[0]);
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,42 +23,37 @@ export default function FaqManager() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
-
   useEffect(() => {
-    void loadFaqs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await fetchFaqsForAdmin(page);
+        if (mounted) setFaqs(data);
+      } catch {
+        if (mounted) toast.error("Unable to load FAQs.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, [page]);
-
-  async function loadFaqs() {
-    setLoading(true);
-    try {
-      setFaqs(await fetchFaqsForAdmin(page));
-    } catch {
-      toast.error("Unable to load FAQs.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   function openAddForm() {
     setEditingFaq(null);
     setForm(EMPTY_FORM);
     setIsFormOpen(true);
   }
-
   function openEditForm(faq: Faq) {
     setEditingFaq(faq);
     setForm({ question: faq.question, answer: faq.answer, is_active: faq.is_active });
     setIsFormOpen(true);
   }
-
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.question.trim() || !form.answer.trim()) {
       toast.error("Question and answer are required.");
       return;
     }
-
     setSaving(true);
     try {
       if (editingFaq) {
@@ -80,7 +73,6 @@ export default function FaqManager() {
       setSaving(false);
     }
   }
-
   async function handleDelete(id: string) {
     if (!window.confirm("Delete this FAQ?")) return;
     setDeletingId(id);
@@ -94,11 +86,9 @@ export default function FaqManager() {
       setDeletingId(null);
     }
   }
-
   async function handleReorder(index: number, direction: "up" | "down") {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= faqs.length) return;
-
     const current = faqs[index];
     const target = faqs[targetIndex];
     setReorderingId(current.id);
@@ -115,7 +105,6 @@ export default function FaqManager() {
       setReorderingId(null);
     }
   }
-
   async function toggleActive(faq: Faq) {
     try {
       const updated = await updateFaq(faq.id, { question: faq.question, answer: faq.answer, is_active: !faq.is_active });
@@ -124,7 +113,6 @@ export default function FaqManager() {
       toast.error("Unable to update this FAQ.");
     }
   }
-
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -146,7 +134,6 @@ export default function FaqManager() {
           </select>
         }
       />
-
       <div className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${isDarkTheme ? "border-white/10 bg-slate-900/70" : "border-slate-200 bg-white"}`}>
         {loading ? (
           <div className={`px-4 py-10 text-center text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>Loading FAQs...</div>
@@ -162,7 +149,6 @@ export default function FaqManager() {
                   <p className={`font-semibold ${isDarkTheme ? "text-white" : "text-slate-900"}`}>{faq.question}</p>
                   <p className={`mt-1 line-clamp-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-500"}`}>{faq.answer}</p>
                 </div>
-
                 <AdminRowActions
                   canMoveUp={index !== 0}
                   canMoveDown={index !== faqs.length - 1}
@@ -180,7 +166,6 @@ export default function FaqManager() {
           </ul>
         )}
       </div>
-
       {isFormOpen && (
         <AdminFormModal title={editingFaq ? "Edit FAQ" : "Add FAQ"} onClose={() => setIsFormOpen(false)} onSubmit={handleSubmit} saving={saving}>
           <FormField label="Question">
@@ -192,7 +177,6 @@ export default function FaqManager() {
               className={inputClass(isDarkTheme)}
             />
           </FormField>
-
           <FormField label="Answer">
             <textarea
               value={form.answer}
@@ -202,7 +186,6 @@ export default function FaqManager() {
               className={inputClass(isDarkTheme)}
             />
           </FormField>
-
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
             Visible on website
@@ -212,3 +195,4 @@ export default function FaqManager() {
     </div>
   );
 }
+

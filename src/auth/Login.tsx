@@ -1,36 +1,24 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  Loader2,
-} from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../supabase/client";
+import Button from "../components/ui/Button";
+import SEO from "../components/seo/SEO";
 
 export default function Login() {
   const navigate = useNavigate();
   const { signIn } = useAuth();
 
-  const [email, setEmail] = useState("");
+  const getSavedEmail = () => localStorage.getItem("remember-email");
+
+  const [email, setEmail] = useState(() => getSavedEmail() ?? "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => !!getSavedEmail());
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const savedEmail = localStorage.getItem("remember-email");
-
-    if (savedEmail) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
-  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -89,6 +77,7 @@ export default function Login() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080D1A] px-5 py-12 text-white">
+      <SEO title="Sign In" noIndex />
       <div className="absolute left-0 top-0 h-[500px] w-[500px] rounded-full bg-purple-600/20 blur-[150px]" />
 
       <div className="absolute bottom-0 right-0 h-[500px] w-[500px] rounded-full bg-pink-500/20 blur-[150px]" />
@@ -173,14 +162,16 @@ export default function Login() {
             </Link>
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 font-semibold transition hover:opacity-90 disabled:opacity-60"
+            fullWidth
+            size="lg"
+            loading={loading}
+            loadingText="Signing In..."
+            icon={<ArrowRight size={20} />}
           >
-            {loading ? <Loader2 size={20} className="animate-spin" /> : <ArrowRight size={20} />}
-            {loading ? "Signing In..." : "Login"}
-          </button>
+            Login
+          </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-400">

@@ -1,17 +1,12 @@
 import { useEffect, useState } from "react";
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronDown,
-  ChevronUp,
-  ImagePlus,
-  Pencil,
-  Plus,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, ImagePlus, Plus } from "lucide-react";
 import toast from "react-hot-toast";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
+import AdminFormModal from "./components/AdminFormModal";
+import AdminPageHeader from "./components/AdminPageHeader";
+import AdminRowActions from "./components/AdminRowActions";
+import { FormField } from "./components/FormField";
+import { inputClass } from "./components/FormField.utils";
 import {
   PAGES,
   createCard,
@@ -53,22 +48,22 @@ export default function CardsManager() {
   const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
   const [reorderingGroupId, setReorderingGroupId] = useState<string | null>(null);
 
+  // Initialize groups from server on mount
   useEffect(() => {
-    void loadGroups();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let mounted = true;
+    (async () => {
+      setLoadingGroups(true);
+      try {
+        const data = await fetchGroupsForPage(page, true);
+        if (mounted) setGroups(data);
+      } catch {
+        if (mounted) toast.error("Unable to load sections.");
+      } finally {
+        if (mounted) setLoadingGroups(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, [page]);
-
-  async function loadGroups() {
-    setLoadingGroups(true);
-    try {
-      const data = await fetchGroupsForPage(page, true);
-      setGroups(data);
-    } catch {
-      toast.error("Unable to load sections.");
-    } finally {
-      setLoadingGroups(false);
-    }
-  }
 
   function openAddGroup() {
     setEditingGroup(null);
@@ -155,19 +150,12 @@ export default function CardsManager() {
 
   return (
     <div className="space-y-6">
-      <div
-        className={`flex flex-col gap-4 rounded-2xl border p-5 shadow-sm transition-colors duration-300 md:flex-row md:items-center md:justify-between ${
-          isDarkTheme ? "border-white/10 bg-slate-900/70 text-white" : "border-slate-200 bg-white text-slate-900"
-        }`}
-      >
-        <div>
-          <h1 className="text-2xl font-bold">Page Cards</h1>
-          <p className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>
-            Create image card sections on any page — no code changes needed.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
+      <AdminPageHeader
+        title="Page Cards"
+        subtitle="Create image card sections on any page — no code changes needed."
+        actionLabel="New Section"
+        onAction={openAddGroup}
+        extra={
           <select
             value={page}
             onChange={(event) => setPage(event.target.value)}
@@ -181,19 +169,8 @@ export default function CardsManager() {
               </option>
             ))}
           </select>
-
-          <button
-            type="button"
-            onClick={openAddGroup}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-              isDarkTheme ? "bg-violet-500 text-white hover:bg-violet-400" : "bg-violet-600 text-white hover:bg-violet-500"
-            }`}
-          >
-            <Plus size={18} />
-            New Section
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {loadingGroups ? (
         <div className={`rounded-2xl border p-10 text-center text-sm ${isDarkTheme ? "border-white/10 bg-slate-900/70 text-slate-400" : "border-slate-200 bg-white text-slate-600"}`}>
@@ -233,41 +210,16 @@ export default function CardsManager() {
                   </div>
                 </button>
 
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => void handleReorderGroup(index, "up")}
-                    disabled={index === 0 || reorderingGroupId === group.id}
-                    className={`rounded-lg p-2 transition disabled:cursor-not-allowed disabled:opacity-40 ${isDarkTheme ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
-                  >
-                    <ArrowUp size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleReorderGroup(index, "down")}
-                    disabled={index === groups.length - 1 || reorderingGroupId === group.id}
-                    className={`rounded-lg p-2 transition disabled:cursor-not-allowed disabled:opacity-40 ${isDarkTheme ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
-                  >
-                    <ArrowDown size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openEditGroup(group)}
-                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${isDarkTheme ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
-                  >
-                    <Pencil size={14} className="mr-1 inline" />
-                    Rename
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDeleteGroup(group.id)}
-                    disabled={deletingGroupId === group.id}
-                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${isDarkTheme ? "bg-rose-500/15 text-rose-300 hover:bg-rose-500/25" : "bg-rose-100 text-rose-700 hover:bg-rose-200"}`}
-                  >
-                    <Trash2 size={14} className="mr-1 inline" />
-                    Delete
-                  </button>
-                </div>
+                <AdminRowActions
+                  onMoveUp={() => void handleReorderGroup(index, "up")}
+                  onMoveDown={() => void handleReorderGroup(index, "down")}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < groups.length - 1}
+                  reordering={reorderingGroupId === group.id}
+                  onEdit={() => openEditGroup(group)}
+                  onDelete={() => void handleDeleteGroup(group.id)}
+                  deleting={deletingGroupId === group.id}
+                />
               </div>
 
               {expandedGroupId === group.id && (
@@ -281,50 +233,28 @@ export default function CardsManager() {
       )}
 
       {isGroupFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <form
-            onSubmit={handleGroupSubmit}
-            className={`w-full max-w-md space-y-4 rounded-2xl border p-6 shadow-2xl ${
-              isDarkTheme ? "border-white/10 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-900"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{editingGroup ? "Rename Section" : "New Section"}</h2>
-              <button type="button" onClick={() => setIsGroupFormOpen(false)} className={`rounded-full p-1.5 transition ${isDarkTheme ? "text-slate-400 hover:bg-white/10" : "text-slate-500 hover:bg-slate-100"}`}>
-                <X size={18} />
-              </button>
-            </div>
+        <AdminFormModal
+          title={editingGroup ? "Rename Section" : "New Section"}
+          onClose={() => setIsGroupFormOpen(false)}
+          onSubmit={handleGroupSubmit}
+          saving={savingGroup}
+        >
+          <FormField label="Section Title" hint={`This title shows as the section heading on the "${page}" page.`}>
+            <input
+              type="text"
+              value={groupTitleInput}
+              onChange={(event) => setGroupTitleInput(event.target.value)}
+              placeholder="e.g. Our Team, Portfolio, Client Reviews"
+              required
+              className={inputClass(isDarkTheme)}
+            />
+          </FormField>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Section Title</label>
-              <input
-                type="text"
-                value={groupTitleInput}
-                onChange={(event) => setGroupTitleInput(event.target.value)}
-                placeholder="e.g. Our Team, Portfolio, Client Reviews"
-                required
-                className={`w-full rounded-xl border px-3 py-2.5 outline-none transition ${isDarkTheme ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"}`}
-              />
-              <p className={`mt-1.5 text-xs ${isDarkTheme ? "text-slate-500" : "text-slate-400"}`}>
-                This title shows as the section heading on the "{page}" page.
-              </p>
-            </div>
-
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input type="checkbox" checked={groupActiveInput} onChange={(event) => setGroupActiveInput(event.target.checked)} />
-              Visible on website
-            </label>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setIsGroupFormOpen(false)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${isDarkTheme ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
-                Cancel
-              </button>
-              <button type="submit" disabled={savingGroup} className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${isDarkTheme ? "bg-violet-500 hover:bg-violet-400" : "bg-violet-600 hover:bg-violet-500"}`}>
-                {savingGroup ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </form>
-        </div>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={groupActiveInput} onChange={(event) => setGroupActiveInput(event.target.checked)} />
+            Visible on website
+          </label>
+        </AdminFormModal>
       )}
     </div>
   );
@@ -342,21 +272,20 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
   const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
-    void loadCards();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await fetchCardsForGroup(groupId, true);
+        if (mounted) setCards(data);
+      } catch {
+        if (mounted) toast.error("Unable to load cards.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, [groupId]);
-
-  async function loadCards() {
-    setLoading(true);
-    try {
-      const data = await fetchCardsForGroup(groupId, true);
-      setCards(data);
-    } catch {
-      toast.error("Unable to load cards.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function openAddForm() {
     setEditingCard(null);
@@ -511,102 +440,74 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                <button type="button" onClick={() => void handleReorder(index, "up")} disabled={index === 0 || reorderingId === card.id} className={`rounded-lg p-1.5 transition disabled:cursor-not-allowed disabled:opacity-40 ${isDarkTheme ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-white text-slate-700 hover:bg-slate-200"}`}>
-                  <ArrowUp size={14} />
-                </button>
-                <button type="button" onClick={() => void handleReorder(index, "down")} disabled={index === cards.length - 1 || reorderingId === card.id} className={`rounded-lg p-1.5 transition disabled:cursor-not-allowed disabled:opacity-40 ${isDarkTheme ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-white text-slate-700 hover:bg-slate-200"}`}>
-                  <ArrowDown size={14} />
-                </button>
-                <button type="button" onClick={() => openEditForm(card)} className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${isDarkTheme ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-white text-slate-700 hover:bg-slate-200"}`}>
-                  <Pencil size={12} className="mr-1 inline" />
-                  Edit
-                </button>
-                <button type="button" onClick={() => void handleDelete(card.id)} disabled={deletingId === card.id} className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${isDarkTheme ? "bg-rose-500/15 text-rose-300 hover:bg-rose-500/25" : "bg-rose-100 text-rose-700 hover:bg-rose-200"}`}>
-                  <Trash2 size={12} className="mr-1 inline" />
-                  Delete
-                </button>
-              </div>
+              <AdminRowActions
+                onMoveUp={() => void handleReorder(index, "up")}
+                onMoveDown={() => void handleReorder(index, "down")}
+                canMoveUp={index > 0}
+                canMoveDown={index < cards.length - 1}
+                reordering={reorderingId === card.id}
+                onEdit={() => openEditForm(card)}
+                onDelete={() => void handleDelete(card.id)}
+                deleting={deletingId === card.id}
+              />
             </div>
           ))}
         </div>
       )}
 
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 px-4 py-8">
-          <form
-            onSubmit={handleSubmit}
-            className={`w-full max-w-lg space-y-4 rounded-2xl border p-6 shadow-2xl ${isDarkTheme ? "border-white/10 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-900"}`}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{editingCard ? "Edit Card" : "Add Card"}</h2>
-              <button type="button" onClick={() => setIsFormOpen(false)} className={`rounded-full p-1.5 transition ${isDarkTheme ? "text-slate-400 hover:bg-white/10" : "text-slate-500 hover:bg-slate-100"}`}>
-                <X size={18} />
-              </button>
-            </div>
+        <AdminFormModal
+          title={editingCard ? "Edit Card" : "Add Card"}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={handleSubmit}
+          saving={saving}
+          submitDisabled={uploadingImage}
+        >
+          <FormField label="Title">
+            <input
+              type="text"
+              value={form.title}
+              onChange={(event) => setForm({ ...form, title: event.target.value })}
+              required
+              className={inputClass(isDarkTheme)}
+            />
+          </FormField>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Title</label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={(event) => setForm({ ...form, title: event.target.value })}
-                required
-                className={`w-full rounded-xl border px-3 py-2.5 outline-none transition ${isDarkTheme ? "border-white/10 bg-slate-950 text-white focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"}`}
-              />
-            </div>
+          <FormField label="Description">
+            <textarea
+              value={form.description}
+              onChange={(event) => setForm({ ...form, description: event.target.value })}
+              rows={3}
+              className={inputClass(isDarkTheme)}
+            />
+          </FormField>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Description</label>
-              <textarea
-                value={form.description}
-                onChange={(event) => setForm({ ...form, description: event.target.value })}
-                rows={3}
-                className={`w-full rounded-xl border px-3 py-2.5 outline-none transition ${isDarkTheme ? "border-white/10 bg-slate-950 text-white focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"}`}
-              />
+          <FormField label="Image" hint="Recommended: 800×450px (16:9) or larger, under 5MB.">
+            <div className="flex flex-wrap items-center gap-3">
+              {form.image_url && <img src={form.image_url} alt="Card" className="h-16 w-24 rounded-xl object-cover" />}
+              <label className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${isDarkTheme ? "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10" : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
+                <ImagePlus size={16} />
+                {uploadingImage ? "Uploading..." : form.image_url ? "Change Image" : "Upload Image"}
+                <input type="file" accept="image/*" onChange={handleImageSelect} disabled={uploadingImage} className="hidden" />
+              </label>
             </div>
+          </FormField>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Image</label>
-              <div className="flex items-center gap-3">
-                {form.image_url && <img src={form.image_url} alt="Card" className="h-16 w-24 rounded-xl object-cover" />}
-                <label className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${isDarkTheme ? "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10" : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
-                  <ImagePlus size={16} />
-                  {uploadingImage ? "Uploading..." : form.image_url ? "Change Image" : "Upload Image"}
-                  <input type="file" accept="image/*" onChange={handleImageSelect} disabled={uploadingImage} className="hidden" />
-                </label>
-              </div>
-              <p className={`mt-1.5 text-xs ${isDarkTheme ? "text-slate-500" : "text-slate-400"}`}>
-                Recommended: 800×450px (16:9) or larger, under 5MB.
-              </p>
-            </div>
+          <FormField label="Link (optional)">
+            <input
+              type="text"
+              value={form.link_url ?? ""}
+              onChange={(event) => setForm({ ...form, link_url: event.target.value || null })}
+              placeholder="https://... or #contact"
+              className={inputClass(isDarkTheme)}
+            />
+          </FormField>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Link (optional)</label>
-              <input
-                type="text"
-                value={form.link_url ?? ""}
-                onChange={(event) => setForm({ ...form, link_url: event.target.value || null })}
-                placeholder="https://... or #contact"
-                className={`w-full rounded-xl border px-3 py-2.5 outline-none transition ${isDarkTheme ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"}`}
-              />
-            </div>
-
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input type="checkbox" checked={form.is_active} onChange={(event) => setForm({ ...form, is_active: event.target.checked })} />
-              Visible on website
-            </label>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setIsFormOpen(false)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${isDarkTheme ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
-                Cancel
-              </button>
-              <button type="submit" disabled={saving || uploadingImage} className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${isDarkTheme ? "bg-violet-500 hover:bg-violet-400" : "bg-violet-600 hover:bg-violet-500"}`}>
-                {saving ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </form>
-        </div>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={form.is_active} onChange={(event) => setForm({ ...form, is_active: event.target.checked })} />
+            Visible on website
+          </label>
+        </AdminFormModal>
       )}
     </div>
   );

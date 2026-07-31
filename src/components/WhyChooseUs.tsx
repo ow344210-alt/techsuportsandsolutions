@@ -30,7 +30,7 @@ function WhyChooseUs() {
 
   return (
     <Section className="bg-[#08101D] text-white" decoration={<GlowBackground />}>
-      <div className="mb-16 max-w-3xl" data-aos="fade-up">
+      <div className="mb-12 max-w-3xl" data-aos="fade-up">
         <span className="inline-block rounded-full border border-purple-500/30 bg-purple-500/10 px-5 py-2 text-sm tracking-[3px] text-purple-300">
           {content.badge_text}
         </span>
@@ -50,7 +50,6 @@ function WhyChooseUs() {
             <div
               key={index}
               data-aos="fade-up"
-              data-aos-delay={index * 100}
               className="glass-card group flex h-full flex-col p-7 transition-all duration-300 hover:-translate-y-2"
             >
               <div className="icon-box mb-6">

@@ -19,16 +19,15 @@ export default function DynamicPageSections({ page }: DynamicPageSectionsProps) 
     <>
       {sections.map((section) => (
         <Section key={section.group.id} className="bg-[#08101D] text-white" decoration={<GlowBackground />}>
-          <div className="mb-16 max-w-3xl" data-aos="fade-up">
+          <div className="mb-12 max-w-3xl" data-aos="fade-up">
             <h2 className="text-4xl font-bold leading-tight md:text-5xl">{section.group.group_title}</h2>
           </div>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {section.cards.map((card, index) => (
+            {section.cards.map((card) => (
               <div
                 key={card.id}
                 data-aos="fade-up"
-                data-aos-delay={index * 100}
                 className="glass-card group flex h-full flex-col overflow-hidden"
               >
                 {card.image_url && (

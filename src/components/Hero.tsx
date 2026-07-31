@@ -12,12 +12,12 @@ function Hero() {
       "Tech Supports & Solutions helps businesses solve IT challenges, improve security, build scalable software and deliver reliable technical support through modern technology.",
     primary_btn_text: "Start Project",
     secondary_btn_text: "Explore Services",
-    stat1_value: "100+",
-    stat1_label: "Projects",
-    stat2_value: "24/7",
-    stat2_label: "Support",
-    stat3_value: "100%",
-    stat3_label: "Satisfaction",
+    stat1_value: "Full-Service",
+    stat1_label: "Web, mobile & software",
+    stat2_value: "Ongoing",
+    stat2_label: "Support after launch",
+    stat3_value: "Transparent",
+    stat3_label: "Fixed quotes & updates",
   });
 
   return (
@@ -58,12 +58,12 @@ function Hero() {
           {/* Buttons */}
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start">
-            <Button href="#contact" variant="primary" size="lg" icon={<ArrowRight size={18} />}>
+            <Button to="/contact" variant="primary" size="lg" icon={<ArrowRight size={18} />}>
               {content.primary_btn_text}
             </Button>
 
             <Button
-              href="#services"
+              to="/services"
               variant="secondary"
               size="lg"
               icon={<Play size={18} />}

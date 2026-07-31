@@ -6,12 +6,15 @@ const Home = lazy(() => import("../components/Home"));
 const Navbar = lazy(() => import("../components/Navbar"));
 const Footer = lazy(() => import("../components/Footer"));
 const Services = lazy(() => import("../components/Services"));
+const Projects = lazy(() => import("../components/Projects"));
 const Process = lazy(() => import("../components/Process"));
 const About = lazy(() => import("../components/About"));
 const Contact = lazy(() => import("../components/Contact"));
+const NotFound = lazy(() => import("../components/NotFound"));
 const Login = lazy(() => import("../auth/Login"));
 const Register = lazy(() => import("../auth/Register"));
 const ForgotPassword = lazy(() => import("../auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("../auth/ResetPassword"));
 const Account = lazy(() => import("../components/Account"));
 
 const DashboardLayout = lazy(() => import("../dashboard/DashboardLayout"));
@@ -31,9 +34,21 @@ const HeroSliderManager = lazy(() => import("../dashboard/HeroSliderManager"));
 const Support = lazy(() => import("../dashboard/Support"));
 const TechStackManager = lazy(() => import("../dashboard/TechStackManager"));
 const IndustriesManager = lazy(() => import("../dashboard/IndustriesManager"));
+const ProjectsManager = lazy(() => import("../dashboard/ProjectsManager"));
 
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
+import PageLoader from "../components/common/PageLoader";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname]);
+
+  return null;
+}
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -43,13 +58,9 @@ export default function AppRoutes() {
   }, [location.pathname]);
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center text-slate-600 dark:text-slate-300">
-          Loading...
-        </div>
-      }
-    >
+    <>
+      <ScrollToTop />
+      <Suspense fallback={<PageLoader mode="full" text="Loading..." />}>
       <Routes>
         {/* Public */}
 
@@ -61,6 +72,17 @@ export default function AppRoutes() {
             <>
               <Navbar />
               <Services />
+              <Footer />
+            </>
+          }
+        />
+
+        <Route
+          path="/projects"
+          element={
+            <>
+              <Navbar />
+              <Projects />
               <Footer />
             </>
           }
@@ -102,6 +124,7 @@ export default function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Customer Account (any logged-in user) */}
 
@@ -132,6 +155,7 @@ export default function AppRoutes() {
           <Route path="cards" element={<CardsManager />} />
           <Route path="faqs" element={<FaqManager />} />
           <Route path="tech-stack" element={<TechStackManager />} />
+          <Route path="projects" element={<ProjectsManager />} />
           <Route path="industries" element={<IndustriesManager />} />
           <Route path="footer-links" element={<FooterLinksManager />} />
           <Route path="hero-slider" element={<HeroSliderManager />} />
@@ -142,8 +166,18 @@ export default function AppRoutes() {
 
         {/* 404 */}
 
-        <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+        <Route
+          path="*"
+          element={
+            <>
+              <Navbar />
+              <NotFound />
+              <Footer />
+            </>
+          }
+        />
       </Routes>
-    </Suspense>
+      </Suspense>
+    </>
   );
 }

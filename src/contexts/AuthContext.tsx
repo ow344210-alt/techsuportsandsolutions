@@ -1,43 +1,17 @@
 import {
-  createContext,
   useEffect,
   useState,
 } from "react";
 
-import type { ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import toast from "react-hot-toast";
 
 import { supabase } from "../supabase/client";
-
-export type UserRole = "admin" | "customer" | null;
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  role: UserRole;
-  roleLoading: boolean;
-
-  signUp: (email: string, password: string, options?: { data?: { full_name?: string; }; }) => Promise<any>;
-  signIn: (email: string, password: string) => Promise<any>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<any>;
-  refreshUser: () => Promise<void>;
-
-}
-
-export const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
-);
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
+import { AuthContext } from "./AuthContext.types";
+import type { AuthContextType, AuthProviderProps, UserRole } from "./AuthContext.types";
 
 export function AuthProvider({
   children,
-
 }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
 
@@ -102,43 +76,26 @@ export function AuthProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-
-
         setSession(session);
 
-
-
         if (session) {
-
           const {
             data: {
               user
             }
           } = await supabase.auth.getUser();
 
-
           setUser(user);
 
           await loadRole(user?.id);
-
-
         } else {
-
-
           setUser(null);
           setRole(null);
           setRoleLoading(false);
-
-
         }
 
-
-
         setLoading(false);
-
-
       });
-
 
     return () => {
       subscription.unsubscribe();
@@ -146,18 +103,14 @@ export function AuthProvider({
   }, []);
 
   async function refreshUser() {
-
     const {
       data: {
         user
       }
-
     } = await supabase.auth.getUser();
-
 
     setUser(user);
     await loadRole(user?.id);
-
   }
 
   async function signUp(
@@ -169,17 +122,11 @@ export function AuthProvider({
       };
     }
   ) {
-
     return await supabase.auth.signUp({
-
       email,
-
       password,
-
       options
-
     });
-
   }
 
   async function signIn(
@@ -210,9 +157,7 @@ export function AuthProvider({
     signIn,
     signOut,
     resetPassword,
-
     refreshUser,
-
   };
 
   return (

@@ -12,10 +12,11 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
 import { supabase } from "../supabase/client";
 import { fetchMyMessages } from "../lib/contactMessages";
 import type { ContactMessage } from "../lib/contactMessages";
+import SEO from "./seo/SEO";
 
 export default function Account() {
   const { user, role, refreshUser, signOut } = useAuth();
@@ -32,22 +33,21 @@ export default function Account() {
   const [messagesLoading, setMessagesLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.id) {
-      void loadMessages(user.id);
-    }
+    if (!user?.id) return;
+    let mounted = true;
+    (async () => {
+      setMessagesLoading(true);
+      try {
+        const data = await fetchMyMessages(user.id);
+        if (mounted) setMessages(data);
+      } catch {
+        if (mounted) toast.error("Unable to load your messages.");
+      } finally {
+        if (mounted) setMessagesLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, [user?.id]);
-
-  async function loadMessages(userId: string) {
-    setMessagesLoading(true);
-    try {
-      const data = await fetchMyMessages(userId);
-      setMessages(data);
-    } catch {
-      toast.error("Unable to load your messages.");
-    } finally {
-      setMessagesLoading(false);
-    }
-  }
 
   async function uploadAvatar() {
     if (!image || !user) {
@@ -97,8 +97,9 @@ export default function Account() {
 
       await refreshUser();
       toast.success("Profile updated successfully.");
-    } catch (error: any) {
-      toast.error(error?.message || "Something went wrong.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Something went wrong.";
+      toast.error(message);
     } finally {
       setSavingProfile(false);
     }
@@ -106,7 +107,7 @@ export default function Account() {
 
   async function handleLogout() {
     await signOut();
-    navigate("/");
+    navigate("/", { replace: true });
   }
 
   return (
@@ -115,6 +116,7 @@ export default function Account() {
         isDarkTheme ? "bg-[#08101D] text-white" : "bg-slate-50 text-slate-900"
       }`}
     >
+      <SEO title="My Account" noIndex />
       <div className="mx-auto max-w-5xl px-6 py-16">
 
         <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -123,7 +125,7 @@ export default function Account() {
             <p className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>
               Manage your profile and see the messages you've sent us.
               {role === "admin" && (
-                <span className="ml-2 rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-semibold text-violet-400">
+                <span className="ml-2 rounded-lg bg-violet-500/15 px-2 py-0.5 text-xs font-semibold text-violet-400">
                   Admin
                 </span>
               )}
@@ -272,7 +274,7 @@ export default function Account() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-semibold">{msg.subject}</h3>
                     <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      className={`rounded-lg px-2.5 py-0.5 text-xs font-semibold ${
                         msg.status === "Read"
                           ? "bg-emerald-500/15 text-emerald-400"
                           : "bg-amber-500/15 text-amber-400"

@@ -38,7 +38,7 @@ function HeroSlider() {
   }
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-[#08101D] text-white">
+    <section id="home" className="relative min-h-svh w-full overflow-hidden bg-[#08101D] text-white">
       {slides.map((slide, index) => {
         const isActive = index === activeIndex;
 
@@ -99,9 +99,15 @@ function HeroSlider() {
 
                 {slide.button_text && (
                   <div className="mt-10">
-                    <Button href={slide.button_link || "#contact"} variant="primary" size="lg">
-                      {slide.button_text}
-                    </Button>
+                    {slide.button_link ? (
+                      <Button href={slide.button_link} variant="primary" size="lg">
+                        {slide.button_text}
+                      </Button>
+                    ) : (
+                      <Button to="/contact" variant="primary" size="lg">
+                        {slide.button_text}
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>

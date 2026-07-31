@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext.types";
 import PulseWaveform from "./PulseWaveform";
 
 interface StatusStripProps {

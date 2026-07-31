@@ -3,14 +3,14 @@ import Section from "./ui/Section";
 
 function StatsBar() {
   const { content } = useSiteContent("stats", {
-    stat1_value: "10+",
-    stat1_label: "Years Experience",
-    stat2_value: "100+",
-    stat2_label: "Happy Clients",
-    stat3_value: "24/7",
-    stat3_label: "Support Available",
-    stat4_value: "50+",
-    stat4_label: "Projects Delivered",
+    stat1_value: "Full-Service",
+    stat1_label: "Web, mobile & software",
+    stat2_value: "One Team",
+    stat2_label: "Builds plus ongoing support",
+    stat3_value: "Ongoing",
+    stat3_label: "Support after launch",
+    stat4_value: "Transparent",
+    stat4_label: "Fixed quotes & updates",
   });
 
   const stats = [

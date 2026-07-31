@@ -9,8 +9,7 @@ type SectionWidth = "wide" | "text" | "form";
 const MAX_WIDTH_CLASSES: Record<SectionWidth, string> = {
   wide: "max-w-7xl",
   text: "max-w-4xl",
-  // increase "form" to a premium wider container (~1380px)
-  form: "max-w-[1380px]",
+  form: "max-w-6xl",
 };
 
 interface SectionProps {

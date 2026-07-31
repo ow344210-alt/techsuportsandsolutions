@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, ShieldOff, UserX, UserCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
 import { useAuth } from "../hooks/useAuth";
+import AdminPageHeader from "./components/AdminPageHeader";
 import {
   fetchAllUsers,
   setUserDisabled,
@@ -21,20 +22,20 @@ export default function UserManagement() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    void loadUsers();
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await fetchAllUsers();
+        if (mounted) setUsers(data);
+      } catch {
+        if (mounted) toast.error("Unable to load users.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
-
-  async function loadUsers() {
-    setLoading(true);
-    try {
-      const data = await fetchAllUsers();
-      setUsers(data);
-    } catch {
-      toast.error("Unable to load users.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleRoleToggle(targetUser: ManagedUser) {
     const nextRole = targetUser.role === "admin" ? "customer" : "admin";
@@ -94,16 +95,10 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
-      <div
-        className={`rounded-2xl border p-5 shadow-sm transition-colors duration-300 ${
-          isDarkTheme ? "border-white/10 bg-slate-900/70 text-white" : "border-slate-200 bg-white text-slate-900"
-        }`}
-      >
-        <h1 className="text-2xl font-bold">User Management</h1>
-        <p className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>
-          Manage customer and admin accounts. Promote trusted users to admin, or disable accounts that shouldn't have access.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="User Management"
+        subtitle="Manage customer and admin accounts. Promote trusted users to admin, or disable accounts that shouldn't have access."
+      />
 
       <div
         className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${
@@ -135,7 +130,7 @@ export default function UserManagement() {
                       <p className="font-semibold break-all">{u.email}</p>
 
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        className={`rounded-lg px-2 py-1 text-xs font-semibold ${
                           u.role === "admin"
                             ? "bg-violet-500/15 text-violet-400"
                             : isDarkTheme
@@ -147,7 +142,7 @@ export default function UserManagement() {
                       </span>
 
                       {u.is_disabled && (
-                        <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-semibold text-rose-400">
+                        <span className="rounded-lg bg-rose-500/15 px-2 py-1 text-xs font-semibold text-rose-400">
                           Disabled
                         </span>
                       )}

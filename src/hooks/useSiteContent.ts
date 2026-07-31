@@ -3,7 +3,7 @@
 // defaults for any field not yet set by the admin. This makes every public
 // component's content call effectively free after the initial single fetch.
 import { useMemo } from "react";
-import { useSiteContentContext } from "../contexts/SiteContentContext";
+import { useSiteContentContext } from "../contexts/SiteContentContext.types";
 
 export function useSiteContent(section: string, defaults: Record<string, string> = {}) {
   const { contentMap, loading } = useSiteContentContext();

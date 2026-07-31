@@ -22,7 +22,7 @@ function CTABanner() {
         <div className="relative">
           <h2 className="text-3xl font-bold sm:text-4xl md:text-5xl">{content.heading}</h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-gray-300">{content.subheading}</p>
-          <Button href="#contact" variant="primary" size="lg" icon={<ArrowRight size={18} />} className="mt-10">
+          <Button to="/contact" variant="primary" size="lg" icon={<ArrowRight size={18} />} className="mt-10">
             {content.btn_text}
           </Button>
         </div>

@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer } from "recharts";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext.types";
 import type { DailyCount } from "../../lib/dashboardStats";
 import { memo } from "react";
 
@@ -84,10 +84,10 @@ const StatCard = memo(function StatCard({
         </div>
 
         {loading ? (
-          <div className={`h-6 w-16 animate-pulse rounded-full ${isDarkTheme ? "bg-slate-700" : "bg-slate-200"}`} />
+          <div className={`h-6 w-16 animate-pulse rounded-lg ${isDarkTheme ? "bg-slate-700" : "bg-slate-200"}`} />
         ) : (
           <span
-            className={`inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+            className={`inline-flex items-center gap-0.5 rounded-lg px-2.5 py-1 text-xs font-bold ${
               isPositive
                 ? isDarkTheme
                   ? "bg-emerald-500/20 text-emerald-300"

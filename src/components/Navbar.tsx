@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Menu, X, ArrowRight, LogOut, UserCircle } from "lucide-react";
 import logo from "../assets/logo.png";
 import { useAuth } from "../hooks/useAuth";
+import Button from "./ui/Button";
+import { NAV_LINKS } from "../config/nav.config";
+
+function linkClasses(isActive: boolean) {
+  return `relative text-sm font-medium transition duration-300 after:absolute after:-bottom-2 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-purple-500 after:to-pink-500 after:transition-all after:duration-300 hover:after:w-full ${
+    isActive ? "text-white after:w-full" : "text-gray-300 hover:text-purple-400"
+  }`;
+}
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -20,18 +28,10 @@ function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const links = [
-    { name: "Home", href: "/" },
-    { name: "Services", href: "/services" },
-    { name: "Process", href: "/process" },
-    { name: "About", href: "/about" },
-    { name: "Contact", href: "/contact" },
-  ];
-
   async function handleLogout() {
     await signOut();
     setMenuOpen(false);
-    navigate("/");
+    navigate("/", { replace: true });
   }
 
   return (
@@ -43,8 +43,9 @@ function Navbar() {
       }`}
     >
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-
-        <a href="#home"
+        <NavLink
+          to="/"
+          aria-label="Tech Supports & Solutions home"
           className="flex shrink-0 items-center gap-4"
         >
           <img
@@ -53,140 +54,139 @@ function Navbar() {
             className="h-14 w-auto object-contain transition duration-300 hover:scale-105"
           />
 
-          <div>
-            <h2 className="text-lg font-bold text-white">
-              Tech Supports
-            </h2>
-
-            <p className="text-xs tracking-[5px] text-purple-300">
-              SOLUTIONS
-            </p>
+          <div className="hidden sm:block">
+            <h2 className="text-lg font-bold text-white">Tech Supports</h2>
+            <p className="text-xs tracking-[5px] text-purple-300">SOLUTIONS</p>
           </div>
-        </a>
+        </NavLink>
 
-        <nav className="hidden items-center gap-6 lg:flex xl:gap-10">
-          {links.map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              className="relative text-sm font-medium text-gray-300 transition duration-300 hover:text-purple-400 after:absolute after:-bottom-2 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-purple-500 after:to-pink-500 after:transition-all after:duration-300 hover:after:w-full"
+        <nav className="hidden items-center gap-6 xl:flex xl:gap-8">
+          {NAV_LINKS.map((item) => (
+            <NavLink
+              key={item.href}
+              to={item.href}
+              className={({ isActive }) => linkClasses(isActive)}
             >
               {item.name}
-            </a>
+            </NavLink>
           ))}
         </nav>
 
-        <div className="hidden shrink-0 items-center gap-3 lg:flex">
+        <div className="hidden shrink-0 items-center gap-3 xl:flex">
           {user ? (
             <>
-              <Link
+              <Button
                 to="/account"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-lg transition duration-300 hover:border-purple-400/60 hover:bg-purple-500/10"
+                variant="secondary"
+                size="sm"
+                icon={<UserCircle size={18} />}
+                iconPosition="left"
               >
-                <UserCircle size={18} />
                 My Account
-              </Link>
+              </Button>
 
               <button
                 type="button"
                 onClick={() => void handleLogout()}
                 title="Logout"
-                className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 p-2.5 text-gray-300 backdrop-blur-lg transition duration-300 hover:border-rose-400/60 hover:bg-rose-500/10 hover:text-rose-300"
+                aria-label="Logout"
+                className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 p-2.5 text-gray-300 transition duration-300 hover:border-rose-400/60 hover:bg-rose-500/10 hover:text-rose-300"
               >
                 <LogOut size={18} />
               </button>
             </>
           ) : (
             <>
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-lg transition duration-300 hover:border-purple-400/60 hover:bg-purple-500/10"
-              >
+              <Button to="/login" variant="secondary" size="sm">
                 Login
-              </Link>
+              </Button>
 
-              <Link
-                to="/register"
-                className="primary-btn"
-              >
+              <Button to="/register" size="sm" icon={<ArrowRight size={18} />}>
                 Register
-                <ArrowRight size={18} />
-              </Link>
+              </Button>
             </>
           )}
         </div>
 
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="shrink-0 rounded-xl border border-white/10 bg-white/5 p-3 text-white transition hover:border-purple-500 lg:hidden"
+          className="shrink-0 rounded-xl border border-white/10 bg-white/5 p-3 text-white transition hover:border-purple-500 xl:hidden"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-navigation"
         >
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
-
       </div>
 
       <div
-        className={`overflow-hidden border-t border-white/10 bg-[#08101D]/95 backdrop-blur-xl transition-all duration-500 lg:hidden ${
-          menuOpen ? "max-h-[600px]" : "max-h-0 border-none"
+        id="mobile-navigation"
+        className={`overflow-hidden border-t border-white/10 bg-[#08101D]/95 backdrop-blur-xl transition-all duration-500 xl:hidden ${
+          menuOpen ? "max-h-[40rem]" : "max-h-0 border-none"
         }`}
       >
         <nav className="flex flex-col py-4">
-          {links.map((item) => (
-            <a
-              key={item.name}
-            
-              href={item.href}
+          {NAV_LINKS.map((item) => (
+            <NavLink
+              key={item.href}
+              to={item.href}
               onClick={() => setMenuOpen(false)}
-              className="px-6 py-4 text-gray-300 transition hover:bg-purple-500/10 hover:text-purple-400"
+              className={({ isActive }) =>
+                `px-6 py-4 text-gray-300 transition hover:bg-purple-500/10 hover:text-purple-400 ${
+                  isActive ? "bg-purple-500/10 text-purple-400" : ""
+                }`
+              }
             >
               {item.name}
-            </a>
+            </NavLink>
           ))}
 
           <div className="flex flex-col gap-3 px-6 pt-4">
             {user ? (
               <>
-                <Link
+                <Button
                   to="/account"
+                  variant="secondary"
+                  fullWidth
                   onClick={() => setMenuOpen(false)}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white"
                 >
                   <UserCircle size={18} />
                   My Account
-                </Link>
+                </Button>
 
-                <button
-                  type="button"
+                <Button
+                  variant="danger"
+                  fullWidth
                   onClick={() => void handleLogout()}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-rose-300"
                 >
                   <LogOut size={18} />
                   Logout
-                </button>
+                </Button>
               </>
             ) : (
               <>
-                <Link
+                <Button
                   to="/login"
+                  variant="secondary"
+                  fullWidth
                   onClick={() => setMenuOpen(false)}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white"
                 >
                   Login
-                </Link>
+                </Button>
 
-                <Link
+                <Button
                   to="/register"
+                  fullWidth
                   onClick={() => setMenuOpen(false)}
-                  className="primary-btn w-full justify-center"
                 >
                   Register
-                </Link>
+                  <ArrowRight size={18} />
+                </Button>
               </>
             )}
           </div>
         </nav>
       </div>
-
     </header>
   );
 }

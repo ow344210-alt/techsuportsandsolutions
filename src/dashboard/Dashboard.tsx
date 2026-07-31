@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -9,10 +9,13 @@ import {
   CircleDot,
   BookCheck,
   ArrowRight,
+  FolderPlus,
 } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../supabase/client";
+import Button from "../components/ui/Button";
+import AdminPageHeader from "./components/AdminPageHeader";
 
 type RecentMessage = {
   id: string;
@@ -40,11 +43,10 @@ const statCardConfig = [
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [recentMessagesLoading, setRecentMessagesLoading] = useState(true);
   const [messageStats, setMessageStats] = useState({ total: 0, new: 0, read: 0 });
   const [recentMessages, setRecentMessages] = useState<RecentMessage[]>([]);
   const [isLive, setIsLive] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const fullName = user?.user_metadata?.full_name || "Admin";
@@ -63,7 +65,7 @@ export default function Dashboard() {
     return "Good evening";
   })();
 
-  async function loadMessageStats() {
+const loadMessageStats = useCallback(async () => {
     const { data, error } = await supabase.from("contact_messages").select("status");
 
     if (!error && data) {
@@ -75,11 +77,10 @@ export default function Dashboard() {
         read: stats.filter((item) => item.status === "Read").length,
       });
     }
+    setLoading(false);
+  }, []);
 
-    setStatsLoading(false);
-  }
-
-  async function loadRecentMessages() {
+  const loadRecentMessages = useCallback(async () => {
     const { data, error } = await supabase
       .from("contact_messages")
       .select("id, full_name, email, subject, created_at, status")
@@ -89,24 +90,29 @@ export default function Dashboard() {
     if (!error && data) {
       setRecentMessages(data as RecentMessage[]);
     }
+  }, []);
 
-    setRecentMessagesLoading(false);
-  }
-
+  // Initial data load - separated from realtime subscription
   useEffect(() => {
-    void loadMessageStats();
-    void loadRecentMessages();
+    let mounted = true;
+    async function initialLoad() {
+      await loadMessageStats();
+      if (mounted) await loadRecentMessages();
+    }
+    initialLoad();
+    return () => { mounted = false; };
+  }, [loadMessageStats, loadRecentMessages]);
 
-    // Realtime subscription: any insert/update/delete on contact_messages
-    // refreshes stats and the recent messages list instantly.
+  // Realtime subscription
+  useEffect(() => {
     const channel = supabase
       .channel("dashboard_contact_messages")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "contact_messages" },
         () => {
-          void loadMessageStats();
-          void loadRecentMessages();
+          loadMessageStats();
+          loadRecentMessages();
         }
       )
       .subscribe((status) => {
@@ -116,20 +122,20 @@ export default function Dashboard() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [loadMessageStats, loadRecentMessages]);
 
   const statCards = [
     {
       ...statCardConfig[0],
-      value: statsLoading ? "" : String(messageStats.total),
+      value: loading ? "" : String(messageStats.total),
     },
     {
       ...statCardConfig[1],
-      value: statsLoading ? "" : String(messageStats.new),
+      value: loading ? "" : String(messageStats.new),
     },
     {
       ...statCardConfig[2],
-      value: statsLoading ? "" : String(messageStats.read),
+      value: loading ? "" : String(messageStats.read),
     },
   ];
 
@@ -151,36 +157,27 @@ export default function Dashboard() {
     <div className="max-w-7xl space-y-6 overflow-hidden">
 
       {/* Welcome Banner */}
-      <section className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white/85 p-6 shadow-[0_20px_60px_rgba(76,29,149,.16)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_20px_60px_rgba(76,29,149,.28)] md:p-8">
-        <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-purple-500/20 blur-[100px] dark:bg-purple-600/25" />
-        <div className="pointer-events-none absolute -right-24 -bottom-24 h-64 w-64 rounded-full bg-pink-500/15 blur-[100px] dark:bg-pink-500/20" />
-
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-4 py-1.5 text-xs font-semibold tracking-[3px] text-violet-700 dark:text-violet-200">
+      <AdminPageHeader
+        title={`Welcome back, ${fullName}`}
+        subtitle={
+          <>
+            <span className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-[11px] font-semibold tracking-[3px] text-violet-700 dark:text-violet-200">
               DASHBOARD HOME
             </span>
-
-            <h1 className="mt-4 text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">
-              Welcome back,{" "}
-              <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-                {fullName}
-              </span>
-            </h1>
-
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+            <span className="mt-2 block">
               {greeting} — here's what's happening today.
-            </p>
-            <p className="mt-1 text-sm text-violet-700 dark:text-violet-300">{currentDate}</p>
-          </div>
-
+            </span>
+            <span className="mt-1 block text-violet-700 dark:text-violet-300">{currentDate}</span>
+          </>
+        }
+        extra={
           <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-3 text-sm text-violet-900 dark:text-violet-100">
+            <div className="rounded-xl border border-violet-400/20 bg-violet-500/10 px-4 py-2.5 text-sm text-violet-900 dark:text-violet-100">
               System status: <span className="font-semibold text-slate-900 dark:text-white">Stable</span>
             </div>
 
             <div
-              className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold ${
                 isLive
                   ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
                   : "border-slate-300/40 bg-slate-500/10 text-slate-500 dark:text-slate-400"
@@ -194,8 +191,8 @@ export default function Dashboard() {
               {isLive ? "Live" : "Connecting..."}
             </div>
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* Stat Cards */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -205,7 +202,7 @@ export default function Dashboard() {
           return (
             <article
               key={card.title}
-              className="group rounded-[24px] border border-slate-200 bg-white/80 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.10)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-purple-400/40 hover:shadow-[0_20px_60px_rgba(168,85,247,.18)] dark:border-white/10 dark:bg-white/5 dark:shadow-[0_12px_40px_rgba(15,23,42,0.35)]"
+              className="group rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.10)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-purple-400/40 hover:shadow-[0_20px_60px_rgba(168,85,247,.18)] dark:border-white/10 dark:bg-white/5 dark:shadow-[0_12px_40px_rgba(15,23,42,0.35)]"
             >
               <div className="flex items-center justify-between">
                 <div
@@ -215,7 +212,7 @@ export default function Dashboard() {
                   <Icon size={24} />
                 </div>
 
-                {statsLoading ? (
+                {loading ? (
                   <span className="inline-block h-9 w-14 animate-pulse rounded-lg bg-slate-200 dark:bg-white/10" />
                 ) : (
                   <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-4xl font-extrabold text-transparent">
@@ -233,7 +230,7 @@ export default function Dashboard() {
 
       {/* Recent Messages + Quick Actions */}
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.9fr]">
-        <div className="rounded-[28px] border border-slate-200 bg-white/80 p-6 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_16px_50px_rgba(15,23,42,0.4)]">
+        <div className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_16px_50px_rgba(15,23,42,0.4)]">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="rounded-xl bg-violet-500/15 p-2 text-violet-700 dark:text-violet-200">
@@ -253,7 +250,7 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-3">
-            {recentMessagesLoading ? (
+            {loading ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-950/30 dark:text-slate-300">
                 Loading recent messages...
               </div>
@@ -283,7 +280,7 @@ export default function Dashboard() {
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
                               message.status === "New"
                                 ? "bg-violet-500/15 text-violet-600 dark:text-violet-300"
                                 : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
@@ -305,7 +302,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-slate-200 bg-white/80 p-6 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_16px_50px_rgba(15,23,42,0.4)]">
+        <div className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_16px_50px_rgba(15,23,42,0.4)]">
           <div className="mb-5 flex items-center gap-3">
             <div className="rounded-xl bg-violet-500/15 p-2 text-violet-700 dark:text-violet-200">
               <PencilLine size={20} />
@@ -314,33 +311,45 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => navigate("/dashboard/profile")}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(168,85,247,.3)] transition hover:-translate-y-0.5 hover:shadow-[0_15px_40px_rgba(168,85,247,.4)]"
-              style={{ background: "linear-gradient(90deg, #8b5cf6, #ec4899)" }}
+            <Button
+              to="/dashboard/profile"
+              fullWidth
+              size="md"
+              icon={<PencilLine size={18} />}
             >
-              <PencilLine size={18} />
               Edit Profile
-            </button>
+            </Button>
 
-            <button
-              type="button"
-              onClick={() => navigate("/dashboard/settings")}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-violet-400/30 bg-violet-500/10 px-4 py-3.5 text-sm font-semibold text-violet-900 transition hover:border-violet-400/50 hover:bg-violet-500/20 dark:text-violet-100"
+            <Button
+              to="/dashboard/settings"
+              variant="secondary"
+              fullWidth
+              size="md"
+              icon={<KeyRound size={18} />}
             >
-              <KeyRound size={18} />
               Change Password
-            </button>
+            </Button>
 
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3.5 text-sm font-semibold text-rose-900 transition hover:border-rose-400/50 hover:bg-rose-500/20 dark:text-rose-100"
+            <Button
+              to="/dashboard/projects"
+              variant="secondary"
+              fullWidth
+              size="md"
+              icon={<FolderPlus size={18} />}
             >
-              <LogOut size={18} />
+              Manage Projects
+            </Button>
+
+            <Button
+              type="button"
+              variant="danger"
+              fullWidth
+              size="md"
+              icon={<LogOut size={18} />}
+              onClick={() => void handleLogout()}
+            >
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </section>

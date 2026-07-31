@@ -3,7 +3,7 @@ import { Activity, Mail, RefreshCw, Trash2, Layers } from "lucide-react";
 import { fetchRecentActivity } from "../../lib/activityLogs";
 import type { ActivityLog } from "../../lib/activityLogs";
 import { supabase } from "../../supabase/client";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext.types";
 
 function getActivityMeta(action: string) {
   if (action === "message_received")

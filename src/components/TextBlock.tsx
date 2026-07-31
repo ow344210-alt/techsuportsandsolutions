@@ -19,6 +19,10 @@ function TextBlock({ section, defaultEyebrow = "", defaultHeading = "", defaultP
     paragraph: defaultParagraph,
   });
 
+  if (!content.heading && !content.paragraph) {
+    return null;
+  }
+
   return (
     <Section spacing="tight" maxWidth="text" className="bg-[#0B1220] text-white">
       <div className="text-center" data-aos="fade-up">

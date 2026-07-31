@@ -1,6 +1,7 @@
-﻿import {
+import {
   LayoutDashboard,
   User,
+  UserCircle,
   Settings,
   LogOut,
   X,
@@ -14,12 +15,14 @@
   Images,
   Cpu,
   Building2,
+  ImagePlus,
 } from "lucide-react";
 
+import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
 import logo from "../assets/logo.png";
 
 interface SidebarProps {
@@ -72,10 +75,16 @@ const NAV_ITEMS = [
     end: false,
   },
   { to: "/dashboard/users", label: "Users", icon: User, end: false },
-  { to: "/dashboard/profile", label: "Profile", icon: User, end: false },
+  { to: "/dashboard/profile", label: "Profile", icon: UserCircle, end: false },
   { to: "/dashboard/settings", label: "Settings", icon: Settings, end: false },
   { to: "/dashboard/support", label: "Support", icon: LifeBuoy, end: false },
   { to: "/dashboard/tech-stack", label: "Tech Stack", icon: Cpu, end: false },
+  {
+    to: "/dashboard/projects",
+    label: "Projects",
+    icon: ImagePlus,
+    end: false,
+  },
   {
     to: "/dashboard/industries",
     label: "Industries",
@@ -93,10 +102,21 @@ export default function Sidebar({
   const navigate = useNavigate();
   const isDarkTheme = theme === "dark";
 
+  useEffect(() => {
+    if (!isMobileOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose?.();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileOpen, onClose]);
+
   async function logout() {
     await signOut();
     onClose?.();
-    navigate("/login");
+    navigate("/login", { replace: true });
   }
 
   return (
@@ -125,7 +145,7 @@ export default function Sidebar({
           </div>
         </div>
 
-        <nav className="mt-10 space-y-2 overflow-y-auto">
+        <nav className="mt-10 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
@@ -160,22 +180,29 @@ export default function Sidebar({
         </div>
       </aside>
 
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label="Close mobile menu"
-            onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          />
+      <div
+        aria-hidden={!isMobileOpen}
+        inert={!isMobileOpen}
+        className={`fixed inset-0 z-40 lg:hidden ${isMobileOpen ? "" : "pointer-events-none"}`}
+      >
+        <button
+          type="button"
+          aria-label="Close mobile menu"
+          onClick={onClose}
+          className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+            isMobileOpen ? "opacity-100" : "opacity-0"
+          }`}
+        />
 
-          <aside
-            className={`relative flex h-full w-72 flex-col border-r p-6 shadow-2xl transition-colors duration-300 ${
-              isDarkTheme
-                ? "border-white/10 bg-[#0B1220] text-white"
-                : "border-slate-200 bg-white text-slate-900"
-            }`}
-          >
+        <aside
+          className={`relative flex h-full w-72 flex-col border-r p-6 shadow-2xl transition-transform duration-300 ${
+            isMobileOpen ? "translate-x-0" : "-translate-x-full"
+          } ${
+            isDarkTheme
+              ? "border-white/10 bg-[#0B1220] text-white"
+              : "border-slate-200 bg-white text-slate-900"
+          }`}
+        >
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <img
@@ -198,7 +225,7 @@ export default function Sidebar({
               <button
                 type="button"
                 onClick={onClose}
-                className={`rounded-full border p-2 transition ${
+                className={`rounded-xl border p-2 transition ${
                   isDarkTheme
                     ? "border-white/10 text-gray-300 hover:bg-white/5 hover:text-white"
                     : "border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -208,7 +235,7 @@ export default function Sidebar({
               </button>
             </div>
 
-            <nav className="space-y-2 overflow-y-auto">
+            <nav className="space-y-0.5 overflow-y-auto">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -243,8 +270,7 @@ export default function Sidebar({
               </button>
             </div>
           </aside>
-        </div>
-      )}
+      </div>
     </>
   );
 }

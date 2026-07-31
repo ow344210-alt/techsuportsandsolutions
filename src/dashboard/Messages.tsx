@@ -1,12 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
-import { Eye, Search, Wifi, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Eye, Mail, Search, Wifi, X } from "lucide-react";
 import toast from "react-hot-toast";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
 import { supabase } from "../supabase/client";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import ReplyModal from "../components/dashboard/ReplyModal";
+import ReplyHistory from "../components/dashboard/ReplyHistory";
+import AdminPageHeader from "./components/AdminPageHeader";
+import {
+  fetchMessageReplies,
+  retryFailedReply,
+} from "../lib/contactMessageReplyService";
+import type { ContactMessageReply } from "../lib/contactMessageReplies";
 
-
-type MessageStatus = "New" | "Read";
+type MessageStatus =
+  | "New"
+  | "Read"
+  | "Archived"
+  | "Spam"
+  | "Replied"
+  | "Resolved"
+  | "In Progress";
 
 type ContactMessage = {
   id: string;
@@ -18,8 +32,111 @@ type ContactMessage = {
   status: MessageStatus;
 };
 
+interface RawMessage {
+  id?: unknown;
+  full_name?: unknown;
+  name?: unknown;
+  email?: unknown;
+  subject?: unknown;
+  message?: unknown;
+  created_at?: unknown;
+  status?: unknown;
+}
+
+const STATUS_OPTIONS: MessageStatus[] = [
+  "New",
+  "Read",
+  "Archived",
+  "Spam",
+  "Replied",
+  "Resolved",
+  "In Progress",
+];
+
+// Maps raw database values (lowercase workflow statuses, legacy values,
+// and any other casing) to the display labels used by the UI.
+const STATUS_LABELS: Record<string, MessageStatus> = {
+  new: "New",
+  read: "Read",
+  archived: "Archived",
+  spam: "Spam",
+  replied: "Replied",
+  resolved: "Resolved",
+  in_progress: "In Progress",
+};
+
+function normalizeStatus(value: unknown): MessageStatus {
+  if (typeof value !== "string") {
+    return "New";
+  }
+
+  const key = value.trim().toLowerCase().replace(/\s+/g, "_");
+
+  return STATUS_LABELS[key] ?? "New";
+}
+
+function generateMessageId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// Converts a row returned by the database (or pushed through realtime) into a
+// fully-normalized ContactMessage. Every field is guaranteed to be a non-null
+// string, so callers can safely call .toLowerCase() / render directly.
+function normalizeMessage(raw: RawMessage): ContactMessage {
+  const fullName = [raw.full_name, raw.name]
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .find((value) => value.length > 0);
+
+  return {
+    id: typeof raw.id === "string" && raw.id ? raw.id : generateMessageId(),
+    full_name: fullName ?? "Unknown sender",
+    email: typeof raw.email === "string" ? raw.email.trim() : "",
+    subject:
+      typeof raw.subject === "string" && raw.subject.trim()
+        ? raw.subject.trim()
+        : "(No subject)",
+    message: typeof raw.message === "string" ? raw.message : "",
+    created_at: typeof raw.created_at === "string" ? raw.created_at : "",
+    status: normalizeStatus(raw.status),
+  };
+}
+
+function statusBadgeClasses(
+  status: MessageStatus,
+  isDarkTheme: boolean,
+): string {
+  const light: Record<MessageStatus, string> = {
+    New: "bg-violet-100 text-violet-700",
+    Read: "bg-slate-200 text-slate-600",
+    Archived: "bg-amber-100 text-amber-700",
+    Spam: "bg-rose-100 text-rose-700",
+    Replied: "bg-sky-100 text-sky-700",
+    Resolved: "bg-emerald-100 text-emerald-700",
+    "In Progress": "bg-amber-100 text-amber-700",
+  };
+  const dark: Record<MessageStatus, string> = {
+    New: "bg-violet-500/15 text-violet-300",
+    Read: "bg-slate-500/15 text-slate-300",
+    Archived: "bg-amber-500/15 text-amber-300",
+    Spam: "bg-rose-500/15 text-rose-300",
+    Replied: "bg-sky-500/15 text-sky-300",
+    Resolved: "bg-emerald-500/15 text-emerald-300",
+    "In Progress": "bg-amber-500/15 text-amber-300",
+  };
+
+  return isDarkTheme ? dark[status] : light[status];
+}
+
 export default function Messages() {
   const { theme } = useTheme();
+  const isDarkTheme = theme === "dark";
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 250);
   const [statusFilter, setStatusFilter] = useState<"All" | MessageStatus>(
@@ -33,8 +150,15 @@ export default function Messages() {
   const [viewingMessage, setViewingMessage] = useState<ContactMessage | null>(
     null,
   );
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replies, setReplies] = useState<ContactMessageReply[]>([]);
+  const [repliesLoading, setRepliesLoading] = useState(false);
+  const [retryLoadingId, setRetryLoadingId] = useState<string | null>(null);
+  const viewedMessageIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+
     async function fetchMessages() {
       setLoading(true);
 
@@ -44,13 +168,25 @@ export default function Messages() {
         .order("created_at", { ascending: false });
 
       if (!error && data) {
-        setMessages(data as ContactMessage[]);
+        if (active) {
+          setMessages((data as RawMessage[]).map(normalizeMessage));
+        }
+      } else if (error) {
+        if (active) {
+          toast.error("Unable to load messages.");
+        }
       }
 
-      setLoading(false);
+      if (active) {
+        setLoading(false);
+      }
     }
 
     void fetchMessages();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Realtime subscription: dashboard updates instantly on new/updated/deleted messages
@@ -61,7 +197,7 @@ export default function Messages() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "contact_messages" },
         (payload) => {
-          const newMessage = payload.new as ContactMessage;
+          const newMessage = normalizeMessage(payload.new as RawMessage);
 
           setMessages((current) => {
             if (current.some((message) => message.id === newMessage.id)) {
@@ -77,7 +213,7 @@ export default function Messages() {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "contact_messages" },
         (payload) => {
-          const updatedMessage = payload.new as ContactMessage;
+          const updatedMessage = normalizeMessage(payload.new as RawMessage);
 
           setMessages((current) =>
             current.map((message) =>
@@ -86,17 +222,35 @@ export default function Messages() {
                 : message,
             ),
           );
+
+          setViewingMessage((current) =>
+            current && current.id === updatedMessage.id
+              ? { ...current, ...updatedMessage }
+              : current,
+          );
         },
       )
       .on(
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "contact_messages" },
         (payload) => {
-          const deletedId = (payload.old as { id: string }).id;
+          const oldRow = payload.old as { id?: unknown } | null;
+          const deletedId =
+            typeof oldRow?.id === "string" ? oldRow.id : "";
+
+          if (!deletedId) {
+            return;
+          }
 
           setMessages((current) =>
             current.filter((message) => message.id !== deletedId),
           );
+
+          if (viewedMessageIdRef.current === deletedId) {
+            setViewingMessage(null);
+            setReplies([]);
+            setReplyOpen(false);
+          }
         },
       )
       .subscribe((status) => {
@@ -108,6 +262,44 @@ export default function Messages() {
     };
   }, []);
 
+  // Load reply history whenever a message is opened in the details modal.
+  useEffect(() => {
+    const messageId = viewingMessage?.id;
+
+    if (!messageId) {
+      return;
+    }
+
+    let active = true;
+
+    void fetchMessageReplies(messageId)
+      .then((rows) => {
+        if (active) {
+          setReplies(rows);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          toast.error("Unable to load reply history.");
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setRepliesLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [viewingMessage?.id]);
+
+  // Keep a stable reference to the message currently open in the details modal
+  // so the realtime DELETE handler can reset the modal state.
+  useEffect(() => {
+    viewedMessageIdRef.current = viewingMessage?.id ?? null;
+  }, [viewingMessage?.id]);
+
   async function markAsRead(id: string) {
     if (updatingId) {
       return;
@@ -115,12 +307,33 @@ export default function Messages() {
 
     setUpdatingId(id);
 
-    const { error } = await supabase
+    // The database stores lowercase workflow statuses only. The "read" value
+    // is allowed by the contact_messages_status_check constraint on the
+    // remote database (previously "in_progress" was written, which violated
+    // the constraint and surfaced as error 23514).
+    const { data, error } = await supabase
       .from("contact_messages")
-      .update({ status: "Read" })
-      .eq("id", id);
+      .update({ status: "read" })
+      .eq("id", id)
+      .select("id");
 
     if (error) {
+      console.error("Mark-as-read failed", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      toast.error("Unable to mark this message as read.");
+      setUpdatingId(null);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      console.error("Mark-as-read failed", {
+        code: "no_rows",
+        message: "The update returned no rows; the message may have been deleted.",
+      });
       toast.error("Unable to mark this message as read.");
       setUpdatingId(null);
       return;
@@ -169,14 +382,24 @@ export default function Messages() {
     setMessages((currentMessages) =>
       currentMessages.filter((message) => message.id !== id),
     );
-    setViewingMessage((current) =>
-      current && current.id === id ? null : current,
-    );
+
+    if (viewedMessageIdRef.current === id) {
+      closeMessageDetails();
+    }
+
     toast.success("Message deleted successfully.");
     setDeletingId(null);
   }
 
+  function closeMessageDetails() {
+    setViewingMessage(null);
+    setReplies([]);
+    setReplyOpen(false);
+  }
+
   function openMessage(message: ContactMessage) {
+    setReplyOpen(false);
+    setRepliesLoading(true);
     setViewingMessage(message);
 
     if (message.status === "New") {
@@ -184,8 +407,61 @@ export default function Messages() {
     }
   }
 
+  async function refreshReplies(messageId: string) {
+    try {
+      const rows = await fetchMessageReplies(messageId);
+      setReplies(rows);
+    } catch {
+      toast.error("Unable to refresh reply history.");
+    }
+  }
+
+  async function handleReplySent() {
+    if (!viewingMessage) {
+      return;
+    }
+
+    const messageId = viewingMessage.id;
+    await refreshReplies(messageId);
+
+    setMessages((current) =>
+      current.map((message) =>
+        message.id === messageId ? { ...message, status: "Replied" } : message,
+      ),
+    );
+    setViewingMessage((current) =>
+      current && current.id === messageId
+        ? { ...current, status: "Replied" }
+        : current,
+    );
+  }
+
+  async function handleRetryReply(replyId: string) {
+    if (!viewingMessage) {
+      return;
+    }
+
+    setRetryLoadingId(replyId);
+
+    try {
+      const result = await retryFailedReply(replyId);
+
+      if (!result.success) {
+        toast.error(result.error || "Unable to retry this reply.");
+        return;
+      }
+
+      toast.success("Reply resent successfully.");
+      await refreshReplies(viewingMessage.id);
+    } catch {
+      toast.error("Unable to retry this reply.");
+    } finally {
+      setRetryLoadingId(null);
+    }
+  }
+
   const filteredMessages = useMemo(() => {
-  const normalizedQuery = debouncedQuery.trim().toLowerCase();
+    const normalizedQuery = debouncedQuery.trim().toLowerCase();
 
     return messages.filter((message) => {
       const matchesQuery =
@@ -242,91 +518,77 @@ export default function Messages() {
     toast.success("Messages exported successfully.");
   }
 
-  const isDarkTheme = theme === "dark";
-
   return (
     <div className="space-y-6">
-      <div
-        className={`rounded-2xl border p-5 shadow-sm transition-colors duration-300 ${
-          isDarkTheme
-            ? "border-white/10 bg-slate-900/70 text-white"
-            : "border-slate-200 bg-white text-slate-900"
-        }`}
-      ></div>
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">Contact Messages</h1>
+      <AdminPageHeader
+        title="Contact Messages"
+        subtitle="Review incoming customer requests and track their status."
+        extra={
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap md:w-auto md:max-w-2xl md:flex-nowrap md:items-center">
             <div
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold ${
                 isLive
-                  ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
-                  : "border-slate-300/40 bg-slate-500/10 text-slate-500 dark:text-slate-400"
+                  ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-600"
+                  : "border-slate-300/40 bg-slate-500/10 text-slate-500"
               }`}
             >
               <Wifi size={12} className={isLive ? "animate-pulse" : ""} />
               {isLive ? "Live" : "Connecting..."}
             </div>
-          </div>
-          <p
-            className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}
-          >
-            Review incoming customer requests and track their status.
-          </p>
-        </div>
 
-        <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap md:w-auto md:max-w-2xl md:flex-nowrap md:items-center">
-          <div className="relative w-full sm:flex-1 sm:min-w-[180px] md:max-w-sm">
-            <Search
-              size={18}
-              className={`absolute left-3 top-1/2 -translate-y-1/2 ${
-                isDarkTheme ? "text-slate-400" : "text-slate-500"
-              }`}
-            />
-            <input
-              type="text"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by name, email or subject"
-              className={`w-full rounded-xl border py-2.5 pl-10 pr-3 outline-none transition ${
+            <div className="relative w-full sm:flex-1 sm:min-w-[180px] md:max-w-sm">
+              <Search
+                size={18}
+                className={`absolute left-3 top-1/2 -translate-y-1/2 ${
+                  isDarkTheme ? "text-slate-400" : "text-slate-500"
+                }`}
+              />
+              <input
+                type="text"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search by name, email or subject"
+                className={`w-full rounded-xl border py-2.5 pl-10 pr-3 outline-none transition ${
+                  isDarkTheme
+                    ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500"
+                    : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"
+                }`}
+              />
+            </div>
+
+            <select
+              value={statusFilter}
+              onChange={(event) =>
+                setStatusFilter(event.target.value as "All" | MessageStatus)
+              }
+              className={`w-full rounded-xl border px-3 py-2.5 outline-none transition sm:w-auto sm:min-w-[130px] md:w-40 ${
                 isDarkTheme
-                  ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500"
-                  : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"
+                  ? "border-white/10 bg-slate-950 text-white focus:border-violet-500"
+                  : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"
               }`}
-            />
+            >
+              <option value="All">All</option>
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={exportMessagesAsCsv}
+              className={`w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto ${
+                isDarkTheme
+                  ? "bg-violet-500 text-white hover:bg-violet-400"
+                  : "bg-violet-600 text-white hover:bg-violet-500"
+              }`}
+            >
+              Export CSV
+            </button>
           </div>
-
-          <select
-            value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.target.value as "All" | MessageStatus)
-            }
-            className={`w-full rounded-xl border px-3 py-2.5 outline-none transition sm:w-auto sm:min-w-[130px] md:w-40 ${
-              isDarkTheme
-                ? "border-white/10 bg-slate-950 text-white focus:border-violet-500"
-                : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"
-            }`}
-          >
-            <option value="All">All</option>
-            <option value="New">New</option>
-            <option value="Read">Read</option>
-            <option value="Archived">Archived</option>
-            <option value="Spam">Spam</option>
-          </select>
-
-          <button
-            type="button"
-            onClick={exportMessagesAsCsv}
-            className={`w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto ${
-              isDarkTheme
-                ? "bg-violet-500 text-white hover:bg-violet-400"
-                : "bg-violet-600 text-white hover:bg-violet-500"
-            }`}
-          >
-            Export CSV
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       <div
         className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${
@@ -335,15 +597,16 @@ export default function Messages() {
             : "border-slate-200 bg-white"
         }`}
       >
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div
-              className={`px-4 py-10 text-center text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}
-            >
-              Loading messages...
-            </div>
-          ) : (
-            <table className="min-w-full text-left text-sm">
+        {loading ? (
+          <div
+            className={`px-4 py-10 text-center text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}
+          >
+            Loading messages...
+          </div>
+        ) : (
+          <>
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full text-left text-sm">
               <thead
                 className={
                   isDarkTheme
@@ -371,11 +634,15 @@ export default function Messages() {
                         : "border-slate-200 text-slate-700"
                     }`}
                   >
-                    <td className="px-4 py-3 font-medium">
+                    <td className="max-w-[180px] truncate px-4 py-3 font-medium">
                       {message.full_name}
                     </td>
-                    <td className="px-4 py-3">{message.email}</td>
-                    <td className="px-4 py-3">{message.subject}</td>
+                    <td className="max-w-[220px] truncate px-4 py-3">
+                      {message.email}
+                    </td>
+                    <td className="max-w-[240px] truncate px-4 py-3">
+                      {message.subject}
+                    </td>
                     <td className="px-4 py-3">
                       <button
                         type="button"
@@ -388,20 +655,12 @@ export default function Messages() {
                         {message.message}
                       </button>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-3">
                       {new Date(message.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          message.status === "New"
-                            ? isDarkTheme
-                              ? "bg-violet-500/15 text-violet-300"
-                              : "bg-violet-100 text-violet-700"
-                            : isDarkTheme
-                              ? "bg-emerald-500/15 text-emerald-300"
-                              : "bg-emerald-100 text-emerald-700"
-                        }`}
+                        className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold ${statusBadgeClasses(message.status, isDarkTheme)}`}
                       >
                         {message.status}
                       </span>
@@ -433,16 +692,104 @@ export default function Messages() {
                                 : "bg-rose-100 text-rose-700 hover:bg-rose-200"
                           }`}
                         >
-                          {deletingId === message.id ? "Deleting..." : "Delete"}
+                          {deletingId === message.id
+                            ? "Deleting..."
+                            : "Delete"}
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          )}
-        </div>
+              </table>
+            </div>
+
+            <div
+              className={`divide-y md:hidden ${isDarkTheme ? "divide-white/10" : "divide-slate-200"}`}
+            >
+              {filteredMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex flex-col gap-3 p-4 ${
+                    isDarkTheme ? "text-slate-200" : "text-slate-700"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => openMessage(message)}
+                      className="min-w-0 flex-1 truncate text-left font-semibold hover:underline"
+                      title="Click to view full message"
+                    >
+                      {message.subject}
+                    </button>
+                    <span
+                      className={`inline-flex shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold ${statusBadgeClasses(message.status, isDarkTheme)}`}
+                    >
+                      {message.status}
+                    </span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {message.full_name}
+                    </p>
+                    <p
+                      className={`truncate text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-500"}`}
+                    >
+                      {message.email}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => openMessage(message)}
+                    className={`line-clamp-2 text-left text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}
+                    title="Click to view full message"
+                  >
+                    {message.message}
+                  </button>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`text-xs ${isDarkTheme ? "text-slate-500" : "text-slate-400"}`}
+                    >
+                      {new Date(message.created_at).toLocaleDateString()}
+                    </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openMessage(message)}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                          isDarkTheme
+                            ? "bg-white/5 text-slate-200 hover:bg-white/10"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        <Eye size={14} />
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteMessage(message.id)}
+                        disabled={deletingId === message.id}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                          deletingId === message.id
+                            ? "cursor-not-allowed opacity-60"
+                            : isDarkTheme
+                              ? "bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
+                              : "bg-rose-100 text-rose-700 hover:bg-rose-200"
+                        }`}
+                      >
+                        {deletingId === message.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         {!loading && filteredMessages.length === 0 && (
           <div
@@ -454,19 +801,21 @@ export default function Messages() {
       </div>
 
       {viewingMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 sm:items-center">
           <div
-            className={`w-full max-w-lg space-y-4 rounded-2xl border p-6 shadow-2xl ${
+            className={`max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl border p-4 shadow-2xl sm:p-6 ${
               isDarkTheme
                 ? "border-white/10 bg-slate-900 text-white"
                 : "border-slate-200 bg-white text-slate-900"
             }`}
           >
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold">{viewingMessage.subject}</h2>
+              <div className="min-w-0">
+                <h2 className="break-words text-lg font-bold">
+                  {viewingMessage.subject}
+                </h2>
                 <p
-                  className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-500"}`}
+                  className={`mt-1 break-words text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-500"}`}
                 >
                   From {viewingMessage.full_name} &lt;{viewingMessage.email}&gt;
                 </p>
@@ -479,8 +828,8 @@ export default function Messages() {
 
               <button
                 type="button"
-                onClick={() => setViewingMessage(null)}
-                className={`rounded-full p-1.5 transition ${
+                onClick={closeMessageDetails}
+                className={`rounded-xl p-1.5 transition ${
                   isDarkTheme
                     ? "text-slate-400 hover:bg-white/10"
                     : "text-slate-500 hover:bg-slate-100"
@@ -491,7 +840,7 @@ export default function Messages() {
             </div>
 
             <div
-              className={`whitespace-pre-wrap rounded-xl border p-4 text-sm ${
+              className={`whitespace-pre-wrap break-words rounded-xl border p-4 text-sm ${
                 isDarkTheme
                   ? "border-white/10 bg-slate-950 text-slate-200"
                   : "border-slate-200 bg-slate-50 text-slate-700"
@@ -500,12 +849,28 @@ export default function Messages() {
               {viewingMessage.message}
             </div>
 
-            <div className="flex justify-end gap-2">
+            {repliesLoading ? (
+              <div
+                className={`rounded-xl border border-white/10 bg-slate-950/50 p-4 text-center text-sm ${
+                  isDarkTheme ? "text-slate-400" : "text-slate-600"
+                }`}
+              >
+                Loading reply history...
+              </div>
+            ) : (
+              <ReplyHistory
+                replies={replies}
+                onRetry={handleRetryReply}
+                retryLoading={retryLoadingId}
+              />
+            )}
+
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => void deleteMessage(viewingMessage.id)}
                 disabled={deletingId === viewingMessage.id}
-                className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${
                   isDarkTheme
                     ? "bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
                     : "bg-rose-100 text-rose-700 hover:bg-rose-200"
@@ -516,8 +881,21 @@ export default function Messages() {
 
               <button
                 type="button"
-                onClick={() => setViewingMessage(null)}
-                className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                onClick={() => setReplyOpen(true)}
+                className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto ${
+                  isDarkTheme
+                    ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
+                    : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                }`}
+              >
+                <Mail size={16} />
+                Reply
+              </button>
+
+              <button
+                type="button"
+                onClick={closeMessageDetails}
+                className={`w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto ${
                   isDarkTheme
                     ? "bg-violet-500 text-white hover:bg-violet-400"
                     : "bg-violet-600 text-white hover:bg-violet-500"
@@ -528,6 +906,17 @@ export default function Messages() {
             </div>
           </div>
         </div>
+      )}
+
+      {viewingMessage && (
+        <ReplyModal
+          contactMessageId={viewingMessage.id}
+          recipientEmail={viewingMessage.email}
+          originalSubject={viewingMessage.subject}
+          open={replyOpen}
+          onClose={() => setReplyOpen(false)}
+          onReplySent={() => void handleReplySent()}
+        />
       )}
     </div>
   );

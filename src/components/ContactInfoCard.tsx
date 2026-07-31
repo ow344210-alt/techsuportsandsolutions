@@ -2,7 +2,7 @@
 // contact details, working hours, emergency support, response time, and
 // social links into a single polished card. All content editable via the
 // Content Manager admin panel under the "contact-info" section.
-import { Mail, Phone, MapPin, Clock, Zap, Timer } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Zap, Timer, ShieldCheck } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { useSiteContent } from "../hooks/useSiteContent";
 
@@ -164,6 +164,24 @@ function ContactInfoCard() {
               </span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Privacy reassurance */}
+      <div className="flex items-start gap-4 rounded-2xl bg-slate-900/65 p-5 transition-all duration-300 hover:bg-slate-900/80">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-pink-500/10 text-violet-300">
+          <ShieldCheck size={20} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-semibold leading-none text-white">
+            Your Privacy Matters
+          </h2>
+
+          <p className="mt-1.5 text-sm leading-6 text-slate-300">
+            Your information is safe with us. We never share your details with
+            third parties and only use your data to respond to your inquiry.
+          </p>
         </div>
       </div>
 

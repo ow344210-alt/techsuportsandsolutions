@@ -3,7 +3,7 @@
 // buttons previously duplicated in FaqManager, CardsManager,
 // FooterLinksManager, ServicesManager, and HeroSliderManager.
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext.types";
 
 interface AdminRowActionsProps {
   onMoveUp?: () => void;
@@ -13,7 +13,7 @@ interface AdminRowActionsProps {
   reordering?: boolean;
   isActive?: boolean;
   onToggleActive?: () => void;
-  onEdit: () => void;
+  onEdit?: () => void;
   onDelete: () => void;
   deleting?: boolean;
 }
@@ -38,7 +38,7 @@ export default function AdminRowActions({
     : "bg-slate-100 text-slate-700 hover:bg-slate-200";
 
   return (
-    <div className="flex items-center gap-2 self-end md:self-auto">
+    <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
       {(onMoveUp || onMoveDown) && (
         <>
           <button
@@ -78,10 +78,12 @@ export default function AdminRowActions({
         </button>
       )}
 
-      <button type="button" onClick={onEdit} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${neutralBtn}`}>
-        <Pencil size={14} className="mr-1 inline" />
-        Edit
-      </button>
+      {onEdit && (
+        <button type="button" onClick={onEdit} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${neutralBtn}`}>
+          <Pencil size={14} className="mr-1 inline" />
+          Edit
+        </button>
+      )}
 
       <button
         type="button"

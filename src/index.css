@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Make the Tailwind `dark:` variant respond to the app's theme toggle
+   (`.dark` on <html>, driven by ThemeContext / isDarkTheme) instead of the
+   OS `prefers-color-scheme`. All admin pages stay consistent with one source. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ==========================================================
    GLOBAL
 ========================================================== */
@@ -91,20 +96,120 @@ section {
   animation: float 5s ease-in-out infinite;
 }
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(35px);
-  }
+/* Continuous marquee rows used by the Services sliders.
+   Each track renders two identical copies of the cards so a translateX of
+   exactly -50% loops seamlessly. Hovering a row pauses the motion. */
+.marquee-viewport {
+  overflow: hidden;
+}
 
+.marquee-track-left,
+.marquee-track-right {
+  display: flex;
+  width: max-content;
+}
+
+.marquee-track-left {
+  animation: marquee-left 45s linear infinite;
+}
+
+.marquee-track-right {
+  animation: marquee-right 45s linear infinite;
+}
+
+/* Keyframes for the two marquee rows. Each track holds two identical copies
+   of the cards, so a -50% translate loops seamlessly in both directions. */
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
   to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%);
   }
 }
 
-.animate-fadeUp {
-  animation: fadeUp 0.9s ease forwards;
+@keyframes marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.marquee-hover:hover .marquee-track-left,
+.marquee-hover:hover .marquee-track-right {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track-left,
+  .marquee-track-right {
+    animation: none;
+    width: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 1.5rem;
+  }
+
+  .marquee-track-left > div,
+  .marquee-track-right > div {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .marquee-viewport {
+    overflow: visible;
+  }
+
+  .marquee-copy {
+    display: none;
+  }
+}
+
+/* Premium animated accent bar used under step headings.
+   A white shine sweeps across the gradient underline on a loop. */
+.heading-accent-bar {
+  position: absolute;
+  left: 0;
+  bottom: -14px;
+  height: 4px;
+  width: 7rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #a855f7, #ec4899);
+  overflow: hidden;
+}
+
+.heading-accent-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.85),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: accent-shine 3s ease-in-out infinite;
+}
+
+@keyframes accent-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heading-accent-shine {
+    animation: none;
+    transform: none;
+    opacity: 0.35;
+  }
 }
 
 /* ==========================================================
@@ -119,43 +224,6 @@ section {
   -webkit-text-fill-color: transparent;
 }
 
-.glow {
-  box-shadow:
-    0 0 20px rgba(168, 85, 247, .30),
-    0 0 45px rgba(168, 85, 247, .20),
-    0 0 80px rgba(168, 85, 247, .15);
-}
-
-.glass {
-  background: rgba(255,255,255,.05);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255,255,255,.08);
-}
-
-.btn-hover {
-  transition: .35s;
-}
-
-.btn-hover:hover {
-  transform: translateY(-4px);
-}
-
-.card-hover {
-  transition: .4s;
-}
-
-.card-hover:hover {
-  transform: translateY(-12px);
-}
-
-.image-hover {
-  transition: .45s;
-}
-
-.image-hover:hover {
-  transform: scale(1.05);
-}
 /* ==========================================================
    PREMIUM GLASS CARD
 ========================================================== */
@@ -235,199 +303,18 @@ section {
 }
 
 /* ==========================================================
-   FORM
-========================================================== */
-
-.glass-form {
-  background: rgba(255, 255, 255, 0.05);
-
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-
-  border: 1px solid rgba(255, 255, 255, 0.08);
-
-  border-radius: 30px;
-
-  padding: 40px;
-}
-
-.glass-input {
-  width: 100%;
-
-  padding: 16px 20px;
-
-  background: #111827;
-
-  color: #fff;
-
-  border: 1px solid rgba(255, 255, 255, 0.08);
-
-  border-radius: 16px;
-
-  transition: 0.3s ease;
-}
-
-.glass-input::placeholder {
-  color: #94a3b8;
-}
-
-.glass-input:focus {
-  outline: none;
-
-  border-color: #a855f7;
-
-  box-shadow:
-    0 0 0 4px rgba(168, 85, 247, 0.18);
-}
-
-/* ==========================================================
-   PAGE CONTAINER
-========================================================== */
-
-.page-container {
-  min-height: 100vh;
-
-  background: #08101d;
-
-  color: white;
-
-  padding-top: 110px;
-}
-
-.page-section {
-  max-width: 1280px;
-
-  margin: auto;
-
-  padding: 0 24px;
-}
-
-.page-hero {
-  padding: 80px 0 60px;
-}
-
-.page-content {
-  padding: 80px 0;
-}
-/* ==========================================================
-   BUTTONS
-========================================================== */
-
-@layer components {
-
-  .primary-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-
-    white-space: nowrap;
-
-    padding: 14px 28px;
-
-    border-radius: 999px;
-
-    background: linear-gradient(
-      90deg,
-      #8b5cf6,
-      #ec4899
-    );
-
-    color: white;
-
-    font-weight: 600;
-
-    transition: all .35s ease;
-  }
-
-  .primary-btn:hover {
-    transform: translateY(-4px);
-
-    box-shadow:
-      0 18px 45px rgba(168,85,247,.35);
-  }
-
-  @media (min-width:640px){
-
-    .primary-btn{
-      padding:16px 34px;
-    }
-
-  }
-
-}
-
-/* ==========================================================
-   SECONDARY BUTTON
-========================================================== */
-
-.secondary-btn {
-
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-
-  padding:16px 34px;
-
-  border-radius:999px;
-
-  border:1px solid rgba(255,255,255,.12);
-
-  background:rgba(255,255,255,.05);
-
-  backdrop-filter:blur(18px);
-
-  -webkit-backdrop-filter:blur(18px);
-
-  color:white;
-
-  font-weight:600;
-
-  transition:all .35s ease;
-}
-
-.secondary-btn:hover{
-
-  transform:translateY(-4px);
-
-  border-color:rgba(168,85,247,.45);
-
-  background:rgba(168,85,247,.12);
-
-  box-shadow:
-    0 15px 40px rgba(168,85,247,.25);
-
-}
-
-.secondary-btn svg{
-
-  transition:.35s;
-
-}
-
-.secondary-btn:hover svg{
-
-  transform:translateX(4px);
-
-}
-
-/* ==========================================================
    SECTION TITLES
 ========================================================== */
 
 .section-title{
-
   font-size:3rem;
 
   font-weight:700;
 
   line-height:1.1;
-
 }
 
 .section-title span{
-
   background:linear-gradient(
     90deg,
     #a855f7,
@@ -439,205 +326,10 @@ section {
 
   color:transparent;
   -webkit-text-fill-color:transparent;
-
 }
 
 @media(max-width:768px){
-
   .section-title{
-
     font-size:2.4rem;
-
   }
-
-}
-/* ==========================================================
-   PAGE TRANSITIONS
-========================================================== */
-
-.page-transition{
-
-  animation:pageFade .45s ease;
-
-}
-
-@keyframes pageFade{
-
-  from{
-    opacity:0;
-    transform:translateY(20px);
-  }
-
-  to{
-    opacity:1;
-    transform:translateY(0);
-  }
-
-}
-
-/* ==========================================================
-   NAVBAR ACTIVE LINK
-========================================================== */
-
-.nav-link{
-
-  position:relative;
-
-  transition:.3s;
-
-}
-
-.nav-link::after{
-
-  content:"";
-
-  position:absolute;
-
-  left:0;
-  bottom:-8px;
-
-  width:0;
-
-  height:2px;
-
-  border-radius:100px;
-
-  background:linear-gradient(
-    90deg,
-    #8b5cf6,
-    #ec4899
-  );
-
-  transition:.35s;
-
-}
-
-.nav-link:hover::after,
-.nav-link.active::after{
-
-  width:100%;
-
-}
-
-.nav-link.active{
-
-  color:#c084fc;
-
-}
-
-/* ==========================================================
-   CONTAINER
-========================================================== */
-
-.container-custom{
-
-  width:100%;
-
-  max-width:1280px;
-
-  margin-inline:auto;
-
-  padding-inline:24px;
-
-}
-
-/* ==========================================================
-   UTILITIES
-========================================================== */
-
-.text-gradient{
-
-  background:linear-gradient(
-    90deg,
-    #a855f7,
-    #ec4899
-  );
-
-  background-clip:text;
-  -webkit-background-clip:text;
-
-  color:transparent;
-  -webkit-text-fill-color:transparent;
-
-}
-
-.bg-grid{
-
-  background-image:
-    linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
-
-  background-size:60px 60px;
-
-}
-
-.blur-purple{
-
-  position:absolute;
-
-  width:450px;
-  height:450px;
-
-  border-radius:9999px;
-
-  background:rgba(168,85,247,.18);
-
-  filter:blur(140px);
-
-}
-
-.blur-pink{
-
-  position:absolute;
-
-  width:450px;
-  height:450px;
-
-  border-radius:9999px;
-
-  background:rgba(236,72,153,.18);
-
-  filter:blur(140px);
-
-}
-
-/* ==========================================================
-   RESPONSIVE
-========================================================== */
-
-@media (max-width:1024px){
-
-  .glass-form{
-
-    padding:30px;
-
-  }
-
-}
-
-@media (max-width:768px){
-
-  body{
-
-    font-size:15px;
-
-  }
-
-  .primary-btn,
-  .secondary-btn{
-
-    width:100%;
-
-  }
-
-}
-
-@media (max-width:640px){
-
-  .container-custom{
-
-    padding-inline:20px;
-
-  }
-
 }

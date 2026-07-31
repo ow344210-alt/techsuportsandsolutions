@@ -12,15 +12,15 @@ function CoreValues() {
     heading_line1: "The Values That",
     heading_line2: "Shape Every Project",
     value1_title: "Ownership",
-    value1_desc: "",
+    value1_desc: "One accountable project owner for every engagement — the person you talk to is the person responsible for delivery.",
     value2_title: "Plain Communication",
-    value2_desc: "",
+    value2_desc: "No jargon, no surprises. You always know where the project stands and what happens next.",
     value3_title: "Fixed Commitments",
-    value3_desc: "",
+    value3_desc: "A fixed quote before we start and honest timelines we actually hit.",
     value4_title: "Long-Term Thinking",
-    value4_desc: "",
+    value4_desc: "Systems built to be maintained, improved and supported for years — not patched until launch.",
     value5_title: "Accessibility",
-    value5_desc: "",
+    value5_desc: "Help that's easy to reach, whether it's a quick question or a full project.",
   });
 
   const values = [1, 2, 3, 4, 5].map((n) => ({
@@ -50,7 +50,6 @@ function CoreValues() {
             <div
               key={index}
               data-aos="fade-up"
-              data-aos-delay={index * 80}
               className="glass-card flex h-full flex-col p-6 transition-all duration-300 hover:-translate-y-2"
             >
               <div className="icon-box mb-5">

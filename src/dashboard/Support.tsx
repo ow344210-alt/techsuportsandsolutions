@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { LifeBuoy, Mail, MessageCircleQuestion, Send } from "lucide-react";
+import { Mail, MessageCircleQuestion, Send } from "lucide-react";
 import toast from "react-hot-toast";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
 import { useAuth } from "../hooks/useAuth";
+import Button from "../components/ui/Button";
+import AdminPageHeader from "./components/AdminPageHeader";
+import { FormField } from "./components/FormField";
+import { inputClass } from "./components/FormField.utils";
 import {
   fetchMySupportRequests,
   submitSupportRequest,
@@ -105,29 +109,10 @@ export default function Support() {
 
   return (
     <div className="space-y-6">
-      <div
-        className={`rounded-2xl border p-5 shadow-sm transition-colors duration-300 ${
-          isDarkTheme
-            ? "border-white/10 bg-slate-900/70 text-white"
-            : "border-slate-200 bg-white text-slate-900"
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className={`rounded-xl p-2.5 ${
-              isDarkTheme ? "bg-violet-500/15 text-violet-300" : "bg-violet-100 text-violet-700"
-            }`}
-          >
-            <LifeBuoy size={22} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Support</h1>
-            <p className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>
-              Find answers or send us a message and we'll get back to you.
-            </p>
-          </div>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Support"
+        subtitle="Find answers or send us a message and we'll get back to you."
+      />
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         {/* FAQ */}
@@ -182,46 +167,37 @@ export default function Support() {
           >
             <h2 className="mb-4 text-lg font-bold">Submit a Request</h2>
 
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium">Subject</span>
+            <FormField label="Subject">
               <input
                 type="text"
                 value={form.subject}
                 onChange={(event) => setForm({ ...form, subject: event.target.value })}
                 placeholder="What do you need help with?"
-                className={`w-full rounded-xl border px-3 py-2.5 outline-none transition ${
-                  isDarkTheme
-                    ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500"
-                    : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"
-                }`}
+                className={inputClass(isDarkTheme)}
               />
-            </label>
+            </FormField>
 
-            <label className="mt-4 block">
-              <span className="mb-1.5 block text-sm font-medium">Message</span>
+            <FormField label="Message">
               <textarea
                 rows={4}
                 value={form.message}
                 onChange={(event) => setForm({ ...form, message: event.target.value })}
                 placeholder="Describe the issue or question in detail"
-                className={`w-full rounded-xl border px-3 py-2.5 outline-none transition ${
-                  isDarkTheme
-                    ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500"
-                    : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"
-                }`}
+                className={inputClass(isDarkTheme)}
               />
-            </label>
+            </FormField>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                isDarkTheme ? "bg-violet-500 hover:bg-violet-400" : "bg-violet-600 hover:bg-violet-500"
-              }`}
-            >
-              <Send size={16} />
-              {submitting ? "Sending..." : "Send Request"}
-            </button>
+            <div className="mt-5">
+              <Button
+                type="submit"
+                fullWidth
+                loading={submitting}
+                loadingText="Sending..."
+                icon={<Send size={16} />}
+              >
+                Send Request
+              </Button>
+            </div>
           </form>
 
           <div
@@ -248,7 +224,7 @@ export default function Support() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-semibold">{request.subject}</p>
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeClass[request.status]}`}>
+                      <span className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${statusBadgeClass[request.status]}`}>
                         {request.status}
                       </span>
                     </div>

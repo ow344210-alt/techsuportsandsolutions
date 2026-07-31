@@ -1,9 +1,11 @@
 ﻿import { useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Mail, ArrowLeft, Loader2, Send } from "lucide-react";
+import { Mail, ArrowLeft, Send } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
+import Button from "../components/ui/Button";
+import SEO from "../components/seo/SEO";
 
 export default function ForgotPassword() {
   const { resetPassword } = useAuth();
@@ -43,6 +45,7 @@ export default function ForgotPassword() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#080D1A] px-5 py-12 text-white relative overflow-hidden">
+      <SEO title="Forgot Password" noIndex />
       <div className="absolute top-0 left-0 h-[500px] w-[500px] rounded-full bg-purple-600/20 blur-[150px]" />
 
       <section className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl px-8 py-10 shadow-2xl">
@@ -77,14 +80,16 @@ export default function ForgotPassword() {
             </div>
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 font-semibold transition hover:opacity-90 disabled:opacity-60"
+            fullWidth
+            size="lg"
+            loading={loading}
+            loadingText="Sending..."
+            icon={<Send size={20} />}
           >
-            {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-            {loading ? "Sending..." : "Send Reset Link"}
-          </button>
+            Send Reset Link
+          </Button>
         </form>
 
         <div className="mt-6 text-center">

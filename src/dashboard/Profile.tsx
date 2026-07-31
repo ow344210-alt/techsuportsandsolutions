@@ -1,12 +1,19 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { User, Mail, Save, Loader2, X, Camera } from "lucide-react";
+import { User, Mail, Save, X, Camera } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../supabase/client";
+import Button from "../components/ui/Button";
+import { useTheme } from "../context/ThemeContext.types";
+import AdminPageHeader from "./components/AdminPageHeader";
+import { FormField } from "./components/FormField";
+import { inputClass } from "./components/FormField.utils";
 
 export default function Profile() {
+  const { theme } = useTheme();
+  const isDarkTheme = theme === "dark";
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
@@ -69,19 +76,20 @@ export default function Profile() {
       toast.dismiss(loadingToast);
       toast.success("Profile updated successfully");
       navigate("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("PROFILE UPDATE ERROR:", err);
-      toast.error(err.message || "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="max-w-3xl space-y-8">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-white">My Profile</h1>
+    <div className="max-w-3xl space-y-6">
+      <AdminPageHeader title="My Profile" subtitle="Update your name and profile picture." />
 
-      <div className="rounded-3xl border border-slate-200 bg-white/90 p-8 dark:border-white/10 dark:bg-white/5">
+      <div className="rounded-2xl border border-slate-200 bg-white/90 p-6 dark:border-white/10 dark:bg-white/5 md:p-8">
         <div className="mb-8 flex items-center gap-5">
           <div className="relative">
             <img
@@ -89,7 +97,7 @@ export default function Profile() {
               className="h-24 w-24 rounded-full object-cover border border-purple-500/40"
             />
 
-            <label className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-purple-600 flex cursor-pointer items-center justify-center text-white">
+            <label className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl bg-purple-600 text-white">
               <Camera size={16} />
               <input
                 type="file"
@@ -119,36 +127,43 @@ export default function Profile() {
         </div>
 
         <div className="space-y-5">
-          <div>
-            <label className="mb-2 block text-sm text-slate-700 dark:text-gray-300">Full Name</label>
-            <div className="flex h-14 items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 dark:border-white/10 dark:bg-[#111827]">
-              <User size={20} className="mr-3 text-slate-500 dark:text-gray-400" />
+          <FormField label="Full Name">
+            <div className="relative">
+              <User size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" />
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-transparent outline-none text-slate-900 dark:text-white"
+                className={`${inputClass(isDarkTheme)} pl-10`}
               />
             </div>
-          </div>
+          </FormField>
 
-          <div>
-            <label className="mb-2 block text-sm text-slate-700 dark:text-gray-300">Email</label>
-            <div className="flex h-14 items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 dark:border-white/10 dark:bg-[#111827]">
-              <Mail size={20} className="mr-3 text-slate-500 dark:text-gray-400" />
-              <input disabled value={user?.email || ""} className="w-full bg-transparent outline-none text-slate-500 dark:text-gray-400" />
+          <FormField label="Email">
+            <div className="relative">
+              <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400" />
+              <input disabled value={user?.email || ""} className={`${inputClass(isDarkTheme)} pl-10 disabled:cursor-not-allowed disabled:opacity-60`} />
             </div>
-          </div>
+          </FormField>
 
-          <div className="flex items-center gap-4">
-            <button onClick={updateProfile} disabled={loading} className="h-14 px-8 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 flex items-center gap-2 font-semibold text-white hover:opacity-90 transition disabled:opacity-60">
-              {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-              {loading ? "Saving..." : "Save Changes"}
-            </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button
+              type="button"
+              onClick={() => void updateProfile()}
+              loading={loading}
+              loadingText="Saving..."
+              icon={<Save size={20} />}
+            >
+              Save Changes
+            </Button>
 
-            <button type="button" onClick={() => navigate("/dashboard")} className="h-14 px-8 rounded-2xl border border-slate-200 bg-slate-100 flex items-center gap-2 text-slate-700 transition hover:bg-slate-200 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white">
-              <X size={20} />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate("/dashboard")}
+              icon={<X size={20} />}
+            >
               Close
-            </button>
+            </Button>
           </div>
         </div>
       </div>

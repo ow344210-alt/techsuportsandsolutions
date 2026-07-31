@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import toast from "react-hot-toast";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
 import {
   createFooterLink,
   deleteFooterLink,
@@ -13,14 +13,12 @@ import type { FooterLink, FooterLinkPayload } from "../lib/footerLinks";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
-import { FormField, inputClass } from "./components/FormField";
-
+import { FormField } from "./components/FormField";
+import { inputClass } from "./components/FormField.utils";
 const EMPTY_FORM: FooterLinkPayload = { label: "", url: "", is_active: true };
-
 export default function FooterLinksManager() {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
-
   const [links, setLinks] = useState<FooterLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -29,41 +27,37 @@ export default function FooterLinksManager() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
-
   useEffect(() => {
-    void loadLinks();
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await fetchFooterLinksForAdmin();
+        if (mounted) setLinks(data);
+      } catch {
+        if (mounted) toast.error("Unable to load footer links.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
-
-  async function loadLinks() {
-    setLoading(true);
-    try {
-      setLinks(await fetchFooterLinksForAdmin());
-    } catch {
-      toast.error("Unable to load footer links.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   function openAddForm() {
     setEditingLink(null);
     setForm(EMPTY_FORM);
     setIsFormOpen(true);
   }
-
   function openEditForm(link: FooterLink) {
     setEditingLink(link);
     setForm({ label: link.label, url: link.url, is_active: link.is_active });
     setIsFormOpen(true);
   }
-
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.label.trim() || !form.url.trim()) {
       toast.error("Label and URL are required.");
       return;
     }
-
     setSaving(true);
     try {
       if (editingLink) {
@@ -83,7 +77,6 @@ export default function FooterLinksManager() {
       setSaving(false);
     }
   }
-
   async function handleDelete(id: string) {
     if (!window.confirm("Delete this footer link?")) return;
     setDeletingId(id);
@@ -97,11 +90,9 @@ export default function FooterLinksManager() {
       setDeletingId(null);
     }
   }
-
   async function handleReorder(index: number, direction: "up" | "down") {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= links.length) return;
-
     const current = links[index];
     const target = links[targetIndex];
     setReorderingId(current.id);
@@ -118,7 +109,6 @@ export default function FooterLinksManager() {
       setReorderingId(null);
     }
   }
-
   async function toggleActive(link: FooterLink) {
     try {
       const updated = await updateFooterLink(link.id, { label: link.label, url: link.url, is_active: !link.is_active });
@@ -127,7 +117,6 @@ export default function FooterLinksManager() {
       toast.error("Unable to update this link.");
     }
   }
-
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -136,7 +125,6 @@ export default function FooterLinksManager() {
         actionLabel="Add Link"
         onAction={openAddForm}
       />
-
       <div className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${isDarkTheme ? "border-white/10 bg-slate-900/70" : "border-slate-200 bg-white"}`}>
         {loading ? (
           <div className={`px-4 py-10 text-center text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>Loading links...</div>
@@ -150,7 +138,6 @@ export default function FooterLinksManager() {
                   <p className={`font-semibold ${isDarkTheme ? "text-white" : "text-slate-900"}`}>{link.label}</p>
                   <p className={`text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-500"}`}>{link.url}</p>
                 </div>
-
                 <AdminRowActions
                   canMoveUp={index !== 0}
                   canMoveDown={index !== links.length - 1}
@@ -168,7 +155,6 @@ export default function FooterLinksManager() {
           </ul>
         )}
       </div>
-
       {isFormOpen && (
         <AdminFormModal title={editingLink ? "Edit Link" : "Add Link"} onClose={() => setIsFormOpen(false)} onSubmit={handleSubmit} saving={saving}>
           <FormField label="Label">
@@ -181,7 +167,6 @@ export default function FooterLinksManager() {
               className={inputClass(isDarkTheme)}
             />
           </FormField>
-
           <FormField label="URL" hint='Internal pages: start with "/" (e.g. /about). External sites: full URL.'>
             <input
               type="text"
@@ -192,7 +177,6 @@ export default function FooterLinksManager() {
               className={inputClass(isDarkTheme)}
             />
           </FormField>
-
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
             Visible on website
@@ -202,3 +186,4 @@ export default function FooterLinksManager() {
     </div>
   );
 }
+

@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Save, Trash2, X } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useTheme } from "../context/ThemeContext";
-import { useSiteContentContext } from "../contexts/SiteContentContext";
+import { useTheme } from "../context/ThemeContext.types";
+import { useSiteContentContext } from "../contexts/SiteContentContext.types";
+import AdminFormModal from "./components/AdminFormModal";
+import AdminPageHeader from "./components/AdminPageHeader";
+import { FormField } from "./components/FormField";
+import { inputClass } from "./components/FormField.utils";
 
 import {
   deleteContentField,
@@ -49,25 +53,27 @@ export default function ContentManager() {
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    void loadContent();
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await fetchAllContent();
+        if (mounted) {
+          setFields(data);
+          const map: Record<string, string> = {};
+          data.forEach((f) => {
+            map[f.id] = f.field_value;
+          });
+          setDrafts(map);
+        }
+      } catch {
+        if (mounted) toast.error("Unable to load content.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
-
-  async function loadContent() {
-    setLoading(true);
-    try {
-      const data = await fetchAllContent();
-      setFields(data);
-      const map: Record<string, string> = {};
-      data.forEach((f) => {
-        map[f.id] = f.field_value;
-      });
-      setDrafts(map);
-    } catch {
-      toast.error("Unable to load content.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const groupedBySection = useMemo(() => {
     const groups: Record<string, ContentField[]> = {};
@@ -139,32 +145,19 @@ export default function ContentManager() {
 
   return (
     <div className="space-y-6">
-      <div
-        className={`flex flex-col gap-4 rounded-2xl border p-5 shadow-sm transition-colors duration-300 md:flex-row md:items-center md:justify-between ${
-          isDarkTheme ? "border-white/10 bg-slate-900/70 text-white" : "border-slate-200 bg-white text-slate-900"
-        }`}
-      >
-        <div>
-          <h1 className="text-2xl font-bold">Website Content</h1>
-          <p className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>
+      <AdminPageHeader
+        title="Website Content"
+        subtitle={
+          <>
             Edit text used across Hero, About, Process, Contact, Footer and other sections.
-          </p>
-          <p className={`mt-1 text-xs ${isDarkTheme ? "text-slate-500" : "text-slate-400"}`}>
-            The number under each field shows the recommended length — going over it may break the layout on smaller screens.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsAdding(true)}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-            isDarkTheme ? "bg-violet-500 text-white hover:bg-violet-400" : "bg-violet-600 text-white hover:bg-violet-500"
-          }`}
-        >
-          <Plus size={18} />
-          Add Field
-        </button>
-      </div>
+            <span className={`block text-xs ${isDarkTheme ? "text-slate-500" : "text-slate-400"}`}>
+              The number under each field shows the recommended length — going over it may break the layout on smaller screens.
+            </span>
+          </>
+        }
+        actionLabel="Add Field"
+        onAction={() => setIsAdding(true)}
+      />
 
       {loading ? (
         <div className={`rounded-2xl border p-10 text-center text-sm ${isDarkTheme ? "border-white/10 bg-slate-900/70 text-slate-400" : "border-slate-200 bg-white text-slate-600"}`}>
@@ -272,100 +265,59 @@ export default function ContentManager() {
       )}
 
       {isAdding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <form
-            onSubmit={handleAddField}
-            className={`w-full max-w-md space-y-4 rounded-2xl border p-6 shadow-2xl ${
-              isDarkTheme ? "border-white/10 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-900"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">Add Content Field</h2>
-              <button
-                type="button"
-                onClick={() => setIsAdding(false)}
-                className={`rounded-full p-1.5 transition ${isDarkTheme ? "text-slate-400 hover:bg-white/10" : "text-slate-500 hover:bg-slate-100"}`}
-              >
-                <X size={18} />
-              </button>
-            </div>
+        <AdminFormModal
+          title="Add Content Field"
+          onClose={() => setIsAdding(false)}
+          onSubmit={handleAddField}
+          saving={adding}
+          submitLabel="Add Field"
+        >
+          <FormField label="Section">
+            <select
+              value={newSection}
+              onChange={(event) => setNewSection(event.target.value)}
+              className={inputClass(isDarkTheme)}
+            >
+              {KNOWN_SECTIONS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </FormField>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Section</label>
-              <select
-                value={newSection}
-                onChange={(event) => setNewSection(event.target.value)}
-                className={`w-full rounded-xl border px-3 py-2.5 outline-none transition ${
-                  isDarkTheme ? "border-white/10 bg-slate-950 text-white focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"
+          <FormField label="Field Key" hint='Tip: keys containing "heading", "badge" or "btn" get a shorter recommended limit; "paragraph" or "desc" get a longer one.'>
+            <input
+              type="text"
+              value={newKey}
+              onChange={(event) => setNewKey(event.target.value)}
+              placeholder="e.g. heading, subheading, phone"
+              required
+              className={inputClass(isDarkTheme)}
+            />
+          </FormField>
+
+          <FormField label="Value">
+            <textarea
+              value={newValue}
+              onChange={(event) => setNewValue(event.target.value)}
+              required
+              rows={3}
+              className={inputClass(isDarkTheme)}
+            />
+            {newKey.trim() && (
+              <p
+                className={`mt-1 text-xs font-medium ${
+                  newValue.length > getRecommendedLimit(newKey)
+                    ? "text-rose-500"
+                    : isDarkTheme
+                      ? "text-slate-500"
+                      : "text-slate-400"
                 }`}
               >
-                {KNOWN_SECTIONS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Field Key</label>
-              <input
-                type="text"
-                value={newKey}
-                onChange={(event) => setNewKey(event.target.value)}
-                placeholder="e.g. heading, subheading, phone"
-                required
-                className={`w-full rounded-xl border px-3 py-2.5 outline-none transition ${
-                  isDarkTheme ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"
-                }`}
-              />
-              <p className={`mt-1 text-xs ${isDarkTheme ? "text-slate-500" : "text-slate-400"}`}>
-                Tip: keys containing "heading", "badge" or "btn" get a shorter recommended limit; "paragraph" or "desc" get a longer one.
+                {newValue.length} / {getRecommendedLimit(newKey)} characters recommended
               </p>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Value</label>
-              <textarea
-                value={newValue}
-                onChange={(event) => setNewValue(event.target.value)}
-                required
-                rows={3}
-                className={`w-full rounded-xl border px-3 py-2.5 outline-none transition ${
-                  isDarkTheme ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"
-                }`}
-              />
-              {newKey.trim() && (
-                <p
-                  className={`mt-1 text-xs font-medium ${
-                    newValue.length > getRecommendedLimit(newKey)
-                      ? "text-rose-500"
-                      : isDarkTheme
-                        ? "text-slate-500"
-                        : "text-slate-400"
-                  }`}
-                >
-                  {newValue.length} / {getRecommendedLimit(newKey)} characters recommended
-                </p>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsAdding(false)}
-                className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${isDarkTheme ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={adding}
-                className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${isDarkTheme ? "bg-violet-500 hover:bg-violet-400" : "bg-violet-600 hover:bg-violet-500"}`}
-              >
-                {adding ? "Adding..." : "Add Field"}
-              </button>
-            </div>
-          </form>
-        </div>
+            )}
+          </FormField>
+        </AdminFormModal>
       )}
     </div>
   );

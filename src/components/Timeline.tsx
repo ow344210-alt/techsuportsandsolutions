@@ -13,12 +13,12 @@ function Timeline() {
     milestone2_year: "2021",
     milestone2_title: "Expanded Services",
     milestone2_desc: "Added cybersecurity and cloud solutions to our service offering.",
-    milestone3_year: "2023",
-    milestone3_title: "50+ Clients Served",
-    milestone3_desc: "Reached a major milestone of serving over 50 businesses across industries.",
-    milestone4_year: "2025",
-    milestone4_title: "Software Development Launch",
-    milestone4_desc: "Launched a dedicated custom software development division.",
+    milestone3_year: "Ongoing",
+    milestone3_title: "Support-First Service",
+    milestone3_desc: "Built a service model where the team that builds a system also stays on to support it after launch.",
+    milestone4_year: "Next",
+    milestone4_title: "Custom Software Development",
+    milestone4_desc: "Growing our dedicated custom software development division for web, mobile and internal systems.",
   });
 
   const milestones = [
@@ -44,7 +44,7 @@ function Timeline() {
 
       <div className="relative space-y-10 border-l-2 border-white/10 pl-8">
         {milestones.map((item, index) => (
-          <div key={index} data-aos="fade-up" data-aos-delay={index * 100} className="relative">
+          <div key={index} data-aos="fade-up" className="relative">
             <div className="absolute -left-[41px] flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-500 ring-4 ring-[#08101D]" />
             <span className="text-sm font-semibold text-purple-400">{item.year}</span>
             <h3 className="mt-1 text-xl font-bold">{item.title}</h3>

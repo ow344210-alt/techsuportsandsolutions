@@ -1,17 +1,36 @@
-﻿import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { Menu, Moon, Sun, UserCircle } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/ThemeContext.types";
+
+const PAGE_TITLES: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/dashboard/messages": "Messages",
+  "/dashboard/services": "Services",
+  "/dashboard/users": "Users",
+  "/dashboard/content": "Content",
+  "/dashboard/cards": "Cards",
+  "/dashboard/faqs": "FAQs",
+  "/dashboard/tech-stack": "Tech Stack",
+  "/dashboard/industries": "Industries",
+  "/dashboard/footer-links": "Footer Links",
+  "/dashboard/hero-slider": "Hero Slider",
+  "/dashboard/support": "Support",
+  "/dashboard/profile": "Profile",
+  "/dashboard/settings": "Settings",
+};
 
 export default function DashboardLayout() {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isDarkTheme = theme === "dark";
+  const pageTitle = PAGE_TITLES[location.pathname] ?? "Dashboard";
 
   return (
     <div
@@ -33,7 +52,7 @@ export default function DashboardLayout() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className={`rounded-xl border p-2 transition lg:hidden ${
+              className={`shrink-0 rounded-xl border p-2 transition lg:hidden ${
                 isDarkTheme
                   ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
                   : "border-slate-200 bg-slate-100 text-slate-900 hover:bg-slate-200"
@@ -43,7 +62,11 @@ export default function DashboardLayout() {
               <Menu size={20} />
             </button>
 
-            <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-base font-bold tracking-tight sm:text-lg">{pageTitle}</h2>
+            </div>
+
+            <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={toggleTheme}
@@ -90,7 +113,7 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className={`flex-1 p-6 transition-colors duration-300 lg:p-10 ${isDarkTheme ? "bg-[#08101D]" : "bg-slate-100"}`}>
+        <main className={`mx-auto w-full max-w-7xl flex-1 p-6 transition-colors duration-300 lg:p-10 ${isDarkTheme ? "bg-[#08101D]" : "bg-slate-100"}`}>
           <Outlet />
         </main>
       </div>

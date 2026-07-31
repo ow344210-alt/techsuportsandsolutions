@@ -2,5 +2,13 @@ node_modules/
 dist/
 .env
 .vite/
+.kilo/
 build-output.txt
 install-log.txt
+*.backup
+supabase/functions/.env.local
+project-structure.txt
+supabase/.temp/
+node_modules/
+.env
+.kilo/

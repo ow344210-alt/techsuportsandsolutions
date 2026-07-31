@@ -10,9 +10,11 @@ import { SiteContentProvider } from "./contexts/SiteContentContext";
 function App() {
   useEffect(() => {
     AOS.init({
-      duration: 1000,
+      duration: 400,
       once: true,
-      offset: 100,
+      offset: 0,
+      delay: 0,
+      easing: "ease-out",
     });
   }, []);
 
