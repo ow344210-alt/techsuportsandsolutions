@@ -1,6 +1,7 @@
 // CRUD + media upload for the homepage Hero Slider. Supports image or video
 // backgrounds, custom CTA buttons, overlay strength, and admin-controlled order.
 import { supabase } from "../supabase/client";
+import { cachedQuery } from "./dataCache";
 
 export type MediaType = "image" | "video";
 export type AnimationType = "fade" | "slide";
@@ -45,15 +46,17 @@ export async function fetchSlidesForAdmin(): Promise<HeroSlide[]> {
   return (data ?? []) as HeroSlide[];
 }
 
-export async function fetchActiveSlides(): Promise<HeroSlide[]> {
-  const { data, error } = await supabase
-    .from("hero_slides")
-    .select("*")
-    .eq("is_active", true)
-    .order("order_index", { ascending: true });
+export function fetchActiveSlides(): Promise<HeroSlide[]> {
+  return cachedQuery("hero_slides:active", async () => {
+    const { data, error } = await supabase
+      .from("hero_slides")
+      .select("*")
+      .eq("is_active", true)
+      .order("order_index", { ascending: true });
 
-  if (error) throw error;
-  return (data ?? []) as HeroSlide[];
+    if (error) throw error;
+    return (data ?? []) as HeroSlide[];
+  });
 }
 
 export async function createSlide(payload: HeroSlidePayload, nextOrderIndex: number): Promise<HeroSlide> {

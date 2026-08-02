@@ -132,7 +132,7 @@ export default function Account() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {role === "admin" && (
               <button
                 type="button"

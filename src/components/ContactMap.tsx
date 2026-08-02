@@ -15,7 +15,7 @@ function ContactMap() {
         title="Office Location"
         src={mapSrc}
         width="100%"
-        height="420"
+        className="h-[300px] sm:h-[420px]"
         style={{ border: 0, filter: "grayscale(0.3) invert(0.92) contrast(0.9)" }}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"

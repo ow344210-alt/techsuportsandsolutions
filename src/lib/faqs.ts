@@ -2,6 +2,7 @@
 // "contact") so different pages can show different question sets, all
 // unlimited and fully admin-managed.
 import { supabase } from "../supabase/client";
+import { cachedQuery } from "./dataCache";
 
 export interface Faq {
   id: string;
@@ -33,16 +34,18 @@ export async function fetchFaqsForAdmin(page: string): Promise<Faq[]> {
 }
 
 // Public: only active FAQs for a page, in display order.
-export async function fetchActiveFaqs(page: string): Promise<Faq[]> {
-  const { data, error } = await supabase
-    .from("faqs")
-    .select("*")
-    .eq("page", page)
-    .eq("is_active", true)
-    .order("order_index", { ascending: true });
+export function fetchActiveFaqs(page: string): Promise<Faq[]> {
+  return cachedQuery(`faqs:active:${page}`, async () => {
+    const { data, error } = await supabase
+      .from("faqs")
+      .select("*")
+      .eq("page", page)
+      .eq("is_active", true)
+      .order("order_index", { ascending: true });
 
-  if (error) throw error;
-  return (data ?? []) as Faq[];
+    if (error) throw error;
+    return (data ?? []) as Faq[];
+  });
 }
 
 export async function createFaq(page: string, payload: FaqPayload, nextOrderIndex: number): Promise<Faq> {

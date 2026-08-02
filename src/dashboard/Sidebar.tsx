@@ -24,7 +24,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../context/ThemeContext.types";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo.webp";
 
 interface SidebarProps {
   isMobileOpen?: boolean;

@@ -1,4 +1,5 @@
 import { supabase } from "../supabase/client";
+import { cachedQuery } from "./dataCache";
 
 export interface Testimonial {
   id: string;
@@ -34,16 +35,18 @@ export async function fetchAllTestimonials(): Promise<Testimonial[]> {
   return (data ?? []) as Testimonial[];
 }
 
-export async function fetchActiveTestimonials(): Promise<Testimonial[]> {
-  const { data, error } = await supabase
-    .from("testimonials")
-    .select("*")
-    .eq("is_active", true)
-    .eq("status", "Published")
-    .order("order_index", { ascending: true });
+export function fetchActiveTestimonials(): Promise<Testimonial[]> {
+  return cachedQuery("testimonials:active", async () => {
+    const { data, error } = await supabase
+      .from("testimonials")
+      .select("*")
+      .eq("is_active", true)
+      .eq("status", "Published")
+      .order("order_index", { ascending: true });
 
-  if (error) throw error;
-  return (data ?? []) as Testimonial[];
+    if (error) throw error;
+    return (data ?? []) as Testimonial[];
+  });
 }
 
 export async function createTestimonial(

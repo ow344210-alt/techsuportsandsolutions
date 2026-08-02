@@ -74,7 +74,7 @@ for (let i = 1; i <= MAX_CMS_FAQ_PAIRS; i += 1) {
 function FAQ({ section, page, pages, preview = false, id }: FAQProps) {
   const { content } = useSiteContent(section, FAQ_DEFAULTS);
 
-  const { faqs, loading, error, retry } = useFaqs(pages ?? page ?? section);
+  const { faqs, error, retry } = useFaqs(pages ?? page ?? section);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const cmsFaqs: FAQItem[] = [];
@@ -178,13 +178,7 @@ function FAQ({ section, page, pages, preview = false, id }: FAQProps) {
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="lg:sticky lg:top-28 lg:self-start">{intro}</div>
           <div>
-            {loading ? (
-              <div className="space-y-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-16 animate-pulse rounded-2xl border border-white/10 bg-white/5" />
-                ))}
-              </div>
-            ) : error ? (
+            {error ? (
               errorBlock
             ) : (
               accordion
@@ -204,13 +198,7 @@ function FAQ({ section, page, pages, preview = false, id }: FAQProps) {
       decoration={<BackgroundDecorations preset="faq" />}
     >
       <div className="mb-10 text-center md:mb-12">{intro}</div>
-      {loading ? (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-2xl border border-white/10 bg-white/5" />
-          ))}
-        </div>
-      ) : error ? (
+      {error ? (
         errorBlock
       ) : (
         accordion

@@ -539,7 +539,7 @@ function FeaturedSlide({
 
   return (
     <div className="grid lg:grid-cols-[2fr_3fr]">
-      <div className="flex flex-col justify-center p-8 md:p-10 lg:p-12">
+      <div className="order-2 flex flex-col justify-center p-8 md:p-10 lg:order-1 lg:p-12">
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[2px] text-purple-300">
           <span className="h-1.5 w-1.5 rounded-full bg-pink-400" />
           Featured Project
@@ -592,7 +592,7 @@ function FeaturedSlide({
         </div>
       </div>
 
-      <div className="relative flex items-center justify-center border-t border-white/10 bg-[#0b0f1a]/60 p-8 lg:border-l lg:border-t-0 lg:p-10">
+      <div className="relative order-1 flex items-center justify-center border-t border-white/10 bg-[#0b0f1a]/60 p-8 lg:order-2 lg:border-l lg:border-t-0 lg:p-10">
         {bannerSrc ? (
           <img
             src={bannerSrc}
@@ -773,13 +773,13 @@ function ProjectsHero() {
               Start Your Project
             </Button>
           </div>
-          <div className="mt-10 grid grid-cols-3 gap-4 border-t border-white/10 pt-8">
+          <div className="mt-10 grid grid-cols-1 gap-4 border-t border-white/10 pt-8 sm:grid-cols-3">
             {HERO_STATS.map((stat) => (
               <div key={stat.label}>
                 <div className="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-2xl font-extrabold text-transparent">
                   {stat.value}
                 </div>
-                <div className="mt-1 text-xs font-semibold uppercase tracking-[2px] text-gray-500">
+                <div className="mt-1 text-xs font-semibold uppercase tracking-normal sm:tracking-[2px] text-gray-500">
                   {stat.label}
                 </div>
               </div>

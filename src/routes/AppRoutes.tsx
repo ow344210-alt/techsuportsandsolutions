@@ -41,12 +41,39 @@ import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import PageLoader from "../components/common/PageLoader";
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
+const NAVBAR_HEIGHT = 96;
+const MAX_RETRIES = 40;
+const RETRY_DELAY_MS = 75;
+
+function ScrollManager() {
+  const location = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, [pathname]);
+    AOS.refreshHard();
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (location.hash) {
+      const targetId = location.hash.slice(1);
+      let retries = 0;
+
+      const attemptScroll = () => {
+        const element = document.getElementById(targetId);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const scrollTop = window.scrollY + rect.top - NAVBAR_HEIGHT;
+          window.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
+        } else if (retries < MAX_RETRIES) {
+          retries++;
+          setTimeout(attemptScroll, RETRY_DELAY_MS);
+        }
+      };
+
+      attemptScroll();
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [location.pathname, location.hash]);
 
   return null;
 }
@@ -60,7 +87,7 @@ export default function AppRoutes() {
 
   return (
     <>
-      <ScrollToTop />
+      <ScrollManager />
       <Suspense fallback={<PageLoader mode="full" text="Loading..." />}>
       <Routes>
         {/* Public */}

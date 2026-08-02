@@ -1,6 +1,7 @@
 // Manages the Footer's "Quick Links" column — fully admin-editable so links
 // can be added, renamed, reordered, or hidden without touching code.
 import { supabase } from "../supabase/client";
+import { cachedQuery } from "./dataCache";
 
 export interface FooterLink {
   id: string;
@@ -27,15 +28,17 @@ export async function fetchFooterLinksForAdmin(): Promise<FooterLink[]> {
   return (data ?? []) as FooterLink[];
 }
 
-export async function fetchActiveFooterLinks(): Promise<FooterLink[]> {
-  const { data, error } = await supabase
-    .from("footer_links")
-    .select("*")
-    .eq("is_active", true)
-    .order("order_index", { ascending: true });
+export function fetchActiveFooterLinks(): Promise<FooterLink[]> {
+  return cachedQuery("footer_links:active", async () => {
+    const { data, error } = await supabase
+      .from("footer_links")
+      .select("*")
+      .eq("is_active", true)
+      .order("order_index", { ascending: true });
 
-  if (error) throw error;
-  return (data ?? []) as FooterLink[];
+    if (error) throw error;
+    return (data ?? []) as FooterLink[];
+  });
 }
 
 export async function createFooterLink(payload: FooterLinkPayload, nextOrderIndex: number): Promise<FooterLink> {

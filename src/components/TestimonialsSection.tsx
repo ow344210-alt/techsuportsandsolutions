@@ -146,45 +146,8 @@ function CompactCard({ testimonial }: { testimonial: Testimonial }) {
   );
 }
 
-function TestimonialsSkeleton() {
-  return (
-    <div className="flex h-full flex-col gap-6" data-aos="fade-up">
-      <div className="animate-pulse rounded-[20px] border border-white/10 bg-white/5 p-8">
-        <div className="h-10 w-10 rounded-full bg-white/5" />
-        <div className="mt-5 h-4 w-3/4 rounded bg-white/5" />
-        <div className="mt-3 h-4 w-1/2 rounded bg-white/5" />
-        <div className="mt-5 h-4 w-24 rounded bg-white/5" />
-        <div className="mt-6 flex items-center gap-4 border-t border-white/10 pt-6">
-          <div className="h-14 w-14 rounded-full bg-white/5" />
-          <div className="space-y-2">
-            <div className="h-4 w-28 rounded bg-white/5" />
-            <div className="h-3 w-20 rounded bg-white/5" />
-          </div>
-        </div>
-      </div>
-      <div className="grid flex-1 gap-6 sm:grid-cols-2">
-        {[...Array(2)].map((_, i) => (
-          <div key={i} className="animate-pulse rounded-[20px] border border-white/10 bg-white/5 p-7">
-            <div className="h-4 w-24 rounded bg-white/5" />
-            <div className="mt-4 h-4 w-full rounded bg-white/5" />
-            <div className="mt-2 h-4 w-2/3 rounded bg-white/5" />
-            <div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-5">
-              <div className="h-11 w-11 rounded-full bg-white/5" />
-              <div className="space-y-2">
-                <div className="h-4 w-24 rounded bg-white/5" />
-                <div className="h-3 w-16 rounded bg-white/5" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -194,8 +157,6 @@ export default function TestimonialsSection() {
         if (isMounted) setTestimonials(data);
       } catch {
         // Silently ignore
-      } finally {
-        if (isMounted) setLoading(false);
       }
     }
     void load();
@@ -236,21 +197,17 @@ export default function TestimonialsSection() {
           </div>
         </SectionIntro>
 
-        {loading ? (
-          <TestimonialsSkeleton />
-        ) : (
-          <div className="flex h-full flex-col gap-6" data-aos="fade-up">
-            {featured && <FeaturedCard testimonial={featured} />}
+        <div className="flex h-full flex-col gap-6" data-aos="fade-up">
+          {featured && <FeaturedCard testimonial={featured} />}
 
-            {compact.length > 0 && (
-              <div className="grid flex-1 gap-6 sm:grid-cols-2">
-                {compact.map((testimonial) => (
-                  <CompactCard key={testimonial.id} testimonial={testimonial} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+          {compact.length > 0 && (
+            <div className="grid flex-1 gap-6 sm:grid-cols-2">
+              {compact.map((testimonial) => (
+                <CompactCard key={testimonial.id} testimonial={testimonial} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </Section>
   );

@@ -1,5 +1,6 @@
 // src/lib/techStack.ts
 import { supabase } from "../supabase/client";
+import { cachedQuery } from "./dataCache";
 
 export interface TechItem {
   id: string;
@@ -22,10 +23,12 @@ export async function fetchTechForAdmin(): Promise<TechItem[]> {
   return (data ?? []) as TechItem[];
 }
 
-export async function fetchActiveTech(): Promise<TechItem[]> {
-  const { data, error } = await supabase.from("tech_stack").select("*").eq("is_active", true).order("order_index", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as TechItem[];
+export function fetchActiveTech(): Promise<TechItem[]> {
+  return cachedQuery("tech_stack:active", async () => {
+    const { data, error } = await supabase.from("tech_stack").select("*").eq("is_active", true).order("order_index", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as TechItem[];
+  });
 }
 
 export async function createTech(payload: TechItemPayload, nextOrderIndex: number): Promise<TechItem> {

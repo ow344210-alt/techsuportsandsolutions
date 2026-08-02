@@ -22,7 +22,7 @@ function StatsBar() {
 
   return (
     <Section spacing="tight" className="bg-[#091426] text-white pb-10! md:pb-12!">
-      <div className="grid grid-cols-2 gap-8 md:grid-cols-4" data-aos="fade-up">
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4" data-aos="fade-up">
         {stats.map((stat, index) => (
           <div key={index} className="text-center">
             <h3 className="text-4xl font-bold gradient-text md:text-5xl">{stat.value}</h3>

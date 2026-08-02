@@ -143,7 +143,7 @@ function ContactInfoCard() {
             <div className="flex items-center justify-between gap-4">
               <span className="text-slate-300">{content.working_days}</span>
 
-              <span className="font-medium text-white whitespace-nowrap">
+              <span className="font-medium text-white sm:whitespace-nowrap">
                 {content.working_hours}
               </span>
             </div>
@@ -151,7 +151,7 @@ function ContactInfoCard() {
             <div className="flex items-center justify-between gap-4">
               <span className="text-slate-300">{content.weekend_days}</span>
 
-              <span className="font-medium text-white whitespace-nowrap">
+              <span className="font-medium text-white sm:whitespace-nowrap">
                 {content.weekend_hours}
               </span>
             </div>
@@ -159,7 +159,7 @@ function ContactInfoCard() {
             <div className="flex items-center justify-between gap-4">
               <span className="text-slate-300">Sunday</span>
 
-              <span className="font-medium text-white whitespace-nowrap">
+              <span className="font-medium text-white sm:whitespace-nowrap">
                 {content.sunday_status}
               </span>
             </div>

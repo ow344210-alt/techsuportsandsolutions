@@ -571,6 +571,130 @@ section {
   }
 }
 
+@media(max-width:480px){
+  .glass-card img {
+    max-height: 80px;
+    object-fit: cover;
+    margin: 0 auto;
+    display: block;
+    transform: translateY(-4px);
+  }
+
+  .glass-card.flex-col p:first-child {
+    margin-top: -2px;
+  }
+
+  .glass-card.flex-col .icon-box {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 12px;
+  }
+
+  .glass-card.flex-col h3 {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  .glass-card.flex-col p {
+    font-size: 12px;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  .flex-col.md\:grid-cols-2 > .glass-card,
+  .flex-col.sm\:grid-cols-2 > .glass-card,
+  .grid.sm\:grid-cols-2 > .glass-card {
+    margin-bottom: 12px;
+  }
+
+  .grid.gap-6.sm\:grid-cols-2 > * {
+    margin-bottom: 12px;
+  }
+
+  .grid.gap-6.sm\:grid-cols-2 > * .glass-card.flex-col {
+    padding: 12px;
+    min-height: auto;
+  }
+
+  .mt-12.grid.gap-6.sm\:grid-cols-2,
+  .mt-12.grid.gap-6.lg\:grid-cols-5,
+  .mt-8.grid.gap-6.sm\:grid-cols-2,
+  .mt-12.grid.gap-6.sm\:grid-cols-4 {
+    margin-top: 16px !important;
+    gap: 8px;
+  }
+
+  .glass-card.flex-col .icon-box svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .mt-6.grid.gap-6.sm\:grid-cols-2 > *,
+  .mt-8.grid.gap-6.sm\:grid-cols-2 > * {
+    margin-bottom: 8px;
+  }
+
+  .mt-12.grid.gap-6.sm\:grid-cols-2 {
+    margin-top: 12px !important;
+  }
+
+  .mt-12.grid.gap-6.sm\:grid-cols-2 > * {
+    margin-bottom: 10px;
+  }
+
+  .grid.gap-6.sm\:grid-cols-2 > * > .icon-box {
+    margin-bottom: 8px;
+    width: 55px;
+    height: 55px;
+  }
+
+  .grid.gap-6.sm\:grid-cols-2 > * > .icon-box svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .grid.gap-6.sm\:grid-cols-2 > * > h3 {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .grid.gap-6.sm\:grid-cols-2 > * > p {
+    font-size: 11px;
+    margin-top: 4px;
+    line-height: 1.3;
+  }
+
+  .glass-card.flex-col.items-center > .icon-box {
+    margin-bottom: 8px;
+    width: 55px;
+    height: 55px;
+  }
+
+  .glass-card.flex-col.items-center > .icon-box svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .glass-card.flex-col.items-center > h3 {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .glass-card.flex-col.items-center > p {
+    font-size: 11px;
+    margin-top: 4px;
+    line-height: 1.3;
+  }
+
+  .mt-12.grid.gap-6.sm\:grid-cols-2 > * .glass-card.flex-col.items-center {
+    margin-bottom: 12px;
+  }
+
+  .mt-12.grid.gap-6.sm\:grid-cols-2 > * .glass-card.flex-col.items-center .icon-box {
+    margin-bottom: 8px;
+  }
+}
+
 /* ==========================================================
    HOME PAGE — SECTION FLOW
    Balanced vertical rhythm for every Home section (the Hero is

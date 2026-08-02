@@ -1,5 +1,6 @@
 // src/lib/industries.ts
 import { supabase } from "../supabase/client";
+import { cachedQuery } from "./dataCache";
 
 export interface Industry {
   id: string;
@@ -20,10 +21,12 @@ export async function fetchIndustriesForAdmin(): Promise<Industry[]> {
   return (data ?? []) as Industry[];
 }
 
-export async function fetchActiveIndustries(): Promise<Industry[]> {
-  const { data, error } = await supabase.from("industries").select("*").eq("is_active", true).order("order_index", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Industry[];
+export function fetchActiveIndustries(): Promise<Industry[]> {
+  return cachedQuery("industries:active", async () => {
+    const { data, error } = await supabase.from("industries").select("*").eq("is_active", true).order("order_index", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as Industry[];
+  });
 }
 
 export async function createIndustry(payload: IndustryPayload, nextOrderIndex: number): Promise<Industry> {

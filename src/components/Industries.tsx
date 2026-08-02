@@ -43,7 +43,6 @@ function IndustryCard({ name, index }: { name: string; index: number }) {
 
 function Industries() {
   const [items, setItems] = useState<Industry[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -53,9 +52,6 @@ function Industries() {
       })
       .catch(() => {
         // Silently ignore
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
       });
     return () => {
       isMounted = false;
@@ -91,13 +87,7 @@ function Industries() {
 
         <div className="lg:col-span-7">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {loading ? (
-              [...Array(7)].map((_, i) => (
-                <div key={i} className="h-[86px] animate-pulse rounded-2xl border border-white/10 bg-white/5" />
-              ))
-            ) : (
-              displayed.map((name, index) => <IndustryCard key={index} name={name} index={index} />)
-            )}
+            {displayed.map((name, index) => <IndustryCard key={index} name={name} index={index} />)}
           </div>
         </div>
       </div>

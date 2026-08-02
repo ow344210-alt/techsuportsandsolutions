@@ -1,4 +1,5 @@
 import { supabase } from "../supabase/client";
+import { cachedQuery } from "./dataCache";
 
 export const SERVICE_ICONS = [
   "Monitor",
@@ -78,18 +79,20 @@ export async function fetchAllServices(): Promise<Service[]> {
 // Fetch Public
 // =======================
 
-export async function fetchActiveServices(): Promise<Service[]> {
-  const { data, error } = await supabase
-    .from("services")
-    .select("*")
-    .eq("is_active", true)
-    .eq("status", "Published")
-    .order("order_index", { ascending: true })
-    .order("created_at", { ascending: true });
+export function fetchActiveServices(): Promise<Service[]> {
+  return cachedQuery("services:active", async () => {
+    const { data, error } = await supabase
+      .from("services")
+      .select("*")
+      .eq("is_active", true)
+      .eq("status", "Published")
+      .order("order_index", { ascending: true })
+      .order("created_at", { ascending: true });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return (data ?? []) as Service[];
+    return (data ?? []) as Service[];
+  });
 }
 
 // =======================

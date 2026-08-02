@@ -38,7 +38,7 @@ function ProcessPreview() {
       "A proven, collaborative process that scales to fit every project. We work in clear phases with visible checkpoints, so you always know what's being built, why, and what comes next.",
   });
 
-  const { steps, loading } = useProcessSteps();
+  const { steps } = useProcessSteps();
 
   const displayedSteps = steps.length > 0
     ? steps.slice(0, FALLBACK_STEPS.length).map((step) => ({ title: step.title, purpose: step.purpose }))
@@ -62,29 +62,21 @@ function ProcessPreview() {
           </Button>
         </SectionIntro>
 
-        {loading ? (
-          <div className="space-y-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 animate-pulse rounded-3xl border border-white/10 bg-white/5" />
-            ))}
-          </div>
-        ) : (
-          <ol className="relative space-y-8 border-l border-purple-500/25 pl-8 sm:pl-10">
-            {displayedSteps.map((step, index) => (
-              <li key={step.title} data-aos="fade-up">
-                <div className="flex items-start gap-5">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 font-bold text-white shadow-lg shadow-purple-500/30">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-bold text-white">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-7 text-gray-400">{step.purpose}</p>
-                  </div>
+        <ol className="relative space-y-8 border-l border-purple-500/25 pl-8 sm:pl-10">
+          {displayedSteps.map((step, index) => (
+            <li key={step.title} data-aos="fade-up">
+              <div className="flex items-start gap-5">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 font-bold text-white shadow-lg shadow-purple-500/30">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold text-white">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-gray-400">{step.purpose}</p>
                 </div>
-              </li>
-            ))}
-          </ol>
-        )}
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </Section>
   );

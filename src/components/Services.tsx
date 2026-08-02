@@ -1,5 +1,6 @@
-import { createElement, useCallback, useEffect, useMemo, useState } from "react";
+import { createElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Archive,
   ArrowRight,
@@ -652,6 +653,7 @@ function ServicesCarouselRow({
           {track.map((entry) => (
             <div
               key={entry.id}
+              id={entry.clone ? undefined : `service-${entry.item.id}`}
               className="flex-none"
               style={{ width: cardWidth }}
               aria-hidden={entry.clone || undefined}
@@ -680,6 +682,7 @@ function ServicesStaticGrid({
       {services.map((service) => (
         <div
           key={service.id}
+          id={`service-${service.id}`}
           className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)]"
         >
           <ServiceCard item={service} ctaTo={ctaTo} ctaLabel={ctaLabel} />
@@ -700,6 +703,7 @@ function CarouselSlider({
   cardWidth,
   unit,
   paused,
+  focusId,
 }: {
   first: Service[];
   second: Service[];
@@ -709,6 +713,7 @@ function CarouselSlider({
   cardWidth: number;
   unit: number;
   paused: boolean;
+  focusId?: string;
 }) {
   const [rows, setRows] = useState<{
     a: { w: number; animate: boolean };
@@ -742,6 +747,44 @@ function CarouselSlider({
     },
     [advance],
   );
+
+  const lastFocusIdRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!focusId) return;
+    if (lastFocusIdRef.current === focusId) return;
+    const targetInFirst = first.findIndex((s) => `service-${s.id}` === focusId);
+    const targetInSecond = second.findIndex((s) => `service-${s.id}` === focusId);
+    if (targetInFirst === -1 && targetInSecond === -1) return;
+
+    lastFocusIdRef.current = focusId;
+
+    setTimeout(() => {
+      setRows((prev) => {
+        const next = { ...prev };
+        if (targetInFirst !== -1) {
+          const snapW = breakpoint.visible + targetInFirst;
+          if (next.a.w !== snapW) {
+            next.a = { w: snapW, animate: false };
+          }
+        }
+        if (targetInSecond !== -1) {
+          const snapW = breakpoint.visible + targetInSecond;
+          if (next.b.w !== snapW) {
+            next.b = { w: snapW, animate: false };
+          }
+        }
+        return next;
+      });
+
+      const el = document.getElementById(focusId);
+      if (el) {
+        requestAnimationFrame(() => {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+    }, 0);
+  }, [focusId, first, second, breakpoint.visible]);
 
   return (
     <div className="relative space-y-10">
@@ -792,10 +835,12 @@ function ServicesOpposingSlider({
   services,
   ctaTo,
   ctaLabel,
+  focusId,
 }: {
   services: Service[];
   ctaTo: string;
   ctaLabel: string;
+  focusId?: string;
 }) {
   const { containerRef, breakpoint, cardWidth, unit } = useCarouselMeasure();
   const { first, second } = useMemo(() => distributeServices(services), [services]);
@@ -853,6 +898,7 @@ function ServicesOpposingSlider({
           cardWidth={cardWidth}
           unit={unit}
           paused={paused}
+          focusId={focusId}
         />
       ) : (
         <div className="py-4" />
@@ -998,11 +1044,13 @@ function ServicesCardsSection({
   loading,
   error,
   content,
+  focusId,
 }: {
   services: Service[];
   loading: boolean;
   error: boolean;
   content: Record<string, string>;
+  focusId?: string;
 }) {
   return (
     <Section
@@ -1058,7 +1106,7 @@ function ServicesCardsSection({
         </div>
       ) : (
         <div className="mt-12">
-          <ServicesOpposingSlider services={services} ctaTo="/contact" ctaLabel="Request This Service" />
+          <ServicesOpposingSlider services={services} ctaTo="/contact" ctaLabel="Request This Service" focusId={focusId} />
         </div>
       )}
 
@@ -1587,11 +1635,13 @@ function ServicesPageContent({
   loading,
   error,
   content,
+  focusId,
 }: {
   services: Service[];
   loading: boolean;
   error: boolean;
   content: Record<string, string>;
+  focusId?: string;
 }) {
   const { steps, loading: stepsLoading } = useProcessSteps();
   const [industries, setIndustries] = useState<Industry[]>([]);
@@ -1638,7 +1688,7 @@ function ServicesPageContent({
       />
       <ServicesHero />
       <ServicesIntroduction />
-      <ServicesCardsSection services={services} loading={loading} error={error} content={content} />
+      <ServicesCardsSection services={services} loading={loading} error={error} content={content} focusId={focusId} />
       <BusinessChallenges />
       <OurApproach />
       <DevelopmentProcess steps={steps} stepsLoading={stepsLoading} />
@@ -1656,6 +1706,9 @@ function ServicesPageContent({
 // ============================================================
 
 function Services({ standalone = true }: { standalone?: boolean }) {
+  const location = useLocation();
+  const focusId = location.hash.startsWith("#service-") ? location.hash.slice(1) : undefined;
+  
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -1698,7 +1751,7 @@ function Services({ standalone = true }: { standalone?: boolean }) {
   }, []);
 
   if (standalone) {
-    return <ServicesPageContent services={services} loading={loading} error={error} content={content} />;
+    return <ServicesPageContent services={services} loading={loading} error={error} content={content} focusId={focusId} />;
   }
 
   return (

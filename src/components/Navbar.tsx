@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Menu, X, ArrowRight, LogOut, UserCircle } from "lucide-react";
-import logo from "../assets/nav.png";
+import logo from "../assets/nav.webp";
 import { useAuth } from "../hooks/useAuth";
 import Button from "./ui/Button";
 import { NAV_LINKS } from "../config/nav.config";

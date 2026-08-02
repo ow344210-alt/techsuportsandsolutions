@@ -1,4 +1,4 @@
-import logo from "../assets/logo.png";
+import logo from "../assets/logo.webp";
 import { ArrowRight, Play } from "lucide-react";
 import { useSiteContent } from "../hooks/useSiteContent";
 import Button from "./ui/Button";
@@ -31,7 +31,7 @@ function Hero() {
             {content.badge_text}
           </span>
 
-          <h1 className="mt-8 text-5xl font-extrabold leading-tight sm:text-6xl">
+          <h1 className="mt-8 text-4xl font-extrabold leading-tight break-words sm:text-5xl lg:text-6xl">
             {content.heading_line1}
             <span className="block gradient-text">{content.heading_line2}</span>
           </h1>
@@ -75,7 +75,7 @@ function Hero() {
             <img
               src={logo}
               alt="Tech Supports & Solutions"
-              className="hero-logo-float w-[280px] sm:w-[360px] lg:w-[480px]"
+              className="hero-logo-float w-[min(100%,280px)] sm:w-[360px] lg:w-[480px]"
             />
           </div>
         </div>

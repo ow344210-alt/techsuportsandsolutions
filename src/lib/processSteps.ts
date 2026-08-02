@@ -1,6 +1,7 @@
 // CRUD for the dynamic Process page steps — unlimited, admin-managed,
 // mirrors the faqs.ts pattern.
 import { supabase } from "../supabase/client";
+import { cachedQuery } from "./dataCache";
 
 export interface ProcessStep {
   id: string;
@@ -36,15 +37,17 @@ export async function fetchStepsForAdmin(): Promise<ProcessStep[]> {
   return (data ?? []) as ProcessStep[];
 }
 
-export async function fetchActiveSteps(): Promise<ProcessStep[]> {
-  const { data, error } = await supabase
-    .from("process_steps")
-    .select("*")
-    .eq("is_active", true)
-    .order("order_index", { ascending: true });
+export function fetchActiveSteps(): Promise<ProcessStep[]> {
+  return cachedQuery("process_steps:active", async () => {
+    const { data, error } = await supabase
+      .from("process_steps")
+      .select("*")
+      .eq("is_active", true)
+      .order("order_index", { ascending: true });
 
-  if (error) throw error;
-  return (data ?? []) as ProcessStep[];
+    if (error) throw error;
+    return (data ?? []) as ProcessStep[];
+  });
 }
 
 export async function createStep(payload: ProcessStepPayload, nextOrderIndex: number): Promise<ProcessStep> {

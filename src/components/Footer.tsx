@@ -5,7 +5,7 @@
 // "contact-info" content section. Real fallbacks keep every column populated
 // even before the CMS has content published.
 import { useEffect, useState } from "react";
-import logo from "../assets/tech-supports-logo.png";
+import logo from "../assets/tech-supports-logo.webp";
 import { Mail, Phone as PhoneIcon, MapPin, Clock, ArrowUp, Heart, Send } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import toast from "react-hot-toast";
@@ -76,10 +76,9 @@ function Footer() {
     twitter_url: "",
   });
 
-  const { links: quickLinks, loading: linksLoading } = useFooterLinks();
+  const { links: quickLinks } = useFooterLinks();
 
   const [services, setServices] = useState<Service[]>([]);
-  const [servicesLoading, setServicesLoading] = useState(true);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
 
@@ -92,8 +91,6 @@ function Footer() {
         if (isMounted) setServices(data);
       } catch {
         // Silently ignore on public page
-      } finally {
-        if (isMounted) setServicesLoading(false);
       }
     }
 
@@ -142,10 +139,10 @@ function Footer() {
       ? quickLinks.map((link) => ({ id: link.id, label: link.label, url: link.url }))
       : FALLBACK_QUICK_LINKS;
 
-  const servicesToShow: Array<{ key: string; title: string }> =
+  const servicesToShow: Array<{ key: string; title: string; url: string }> =
     services.length > 0
-      ? services.map((service) => ({ key: service.id, title: service.title }))
-      : FALLBACK_SERVICES.map((title, index) => ({ key: `fallback-${index}`, title }));
+      ? services.map((service) => ({ key: service.id, title: service.title, url: `/services#service-${service.id}` }))
+      : FALLBACK_SERVICES.map((title, index) => ({ key: `fallback-${index}`, title, url: "/services" }));
 
   return (
     <footer className="relative isolate overflow-hidden border-t border-white/10 bg-[#040A13] text-white">
@@ -206,68 +203,46 @@ function Footer() {
           {/* Quick Links */}
           <div className="lg:col-span-2">
             <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Quick Links</h3>
-            {linksLoading ? (
-              <div className="space-y-3">
-                {[...Array(4)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-4 w-24 animate-pulse rounded bg-white/5"
-                  />
-                ))}
-              </div>
-            ) : (
-              <ul className="space-y-3 text-sm text-gray-400 sm:space-y-4 sm:text-base">
-                {quickLinksToShow.map((link) => (
-                  <li key={link.id ?? link.url}>
-                    {link.url.startsWith("http") ? (
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="transition hover:text-purple-400"
-                      >
-                        {link.label}
-                      </a>
-                    ) : (
-                      <Link
-                        to={link.url}
-                        className="transition hover:text-purple-400"
-                      >
-                        {link.label}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ul className="space-y-3 text-sm text-gray-400 sm:space-y-4 sm:text-base">
+              {quickLinksToShow.map((link) => (
+                <li key={link.id ?? link.url}>
+                  {link.url.startsWith("http") ? (
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="transition hover:text-purple-400"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      to={link.url}
+                      className="transition hover:text-purple-400"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* Services — live from database, no duplicate entry needed */}
           <div className="lg:col-span-4">
             <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Services</h3>
-            {servicesLoading ? (
-              <div className="space-y-3">
-                {[...Array(4)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-4 w-24 animate-pulse rounded bg-white/5"
-                  />
-                ))}
-              </div>
-            ) : (
-              <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-400 sm:text-base">
-                {servicesToShow.map((service) => (
-                  <li key={service.key}>
-                    <Link
-                      to="/services"
-                      className="transition hover:text-purple-400"
-                    >
-                      {service.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-400 sm:text-base">
+              {servicesToShow.map((service) => (
+                <li key={service.key}>
+                  <Link
+                    to={service.url}
+                    className="transition hover:text-purple-400"
+                  >
+                    {service.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* Contact */}

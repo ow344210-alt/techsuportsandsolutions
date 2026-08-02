@@ -6,9 +6,11 @@ import "aos/dist/aos.css";
 
 import AppRoutes from "./routes/AppRoutes";
 import { SiteContentProvider } from "./contexts/SiteContentContext";
+import { prefetchPublicData } from "./lib/prefetch";
 
 function App() {
   useEffect(() => {
+    prefetchPublicData();
     AOS.init({
       duration: 400,
       once: true,

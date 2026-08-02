@@ -29,7 +29,9 @@ function HeroSlider() {
   }, [slides.length, goToNext]);
 
   if (loading) {
-    return <div className="h-screen w-full animate-pulse bg-[#07101D]" />;
+    // Show the static hero immediately while slides load so the above-the-fold
+    // content never appears as a blank placeholder. The slider swaps in below.
+    return <Hero />;
   }
 
   // No admin-created slides yet — fall back to the original static Hero
@@ -89,7 +91,7 @@ function HeroSlider() {
                   </span>
                 )}
 
-                <h1 className="mt-8 text-5xl font-extrabold leading-tight sm:text-6xl lg:text-7xl">
+                <h1 className="mt-8 text-4xl font-extrabold leading-tight break-words sm:text-5xl lg:text-7xl">
                   {slide.title}
                 </h1>
 

@@ -25,7 +25,7 @@ import Section from "./ui/Section";
 import Button from "./ui/Button";
 import SEO from "./seo/SEO";
 import { BackgroundDecorations } from "./background";
-import customerConsultationImg from "../assets/services/customer-consultation.png";
+import customerConsultationImg from "../assets/services/customer-consultation.webp";
 
 const initialForm = {
   fullName: "",
@@ -194,7 +194,7 @@ export default function ContactPage() {
             <span className="inline-flex rounded-full border border-violet-400/30 bg-gradient-to-r from-violet-600/20 to-pink-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-violet-200">
               {content.badge_text}
             </span>
-            <h1 className="mt-5 text-4xl font-extrabold tracking-tight leading-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="mt-5 text-4xl font-extrabold tracking-tight leading-tight break-words text-white sm:text-5xl lg:text-6xl">
               {content.heading}
             </h1>
             <p className="mt-4 max-w-xl text-lg leading-8 text-slate-300 sm:text-xl">
@@ -332,7 +332,7 @@ export default function ContactPage() {
 
           <form
             onSubmit={handleSubmit}
-            className="h-full rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-8 shadow-2xl shadow-violet-950/25 transition-transform duration-300 hover:translate-y-[-4px]"
+            className="h-full rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-5 shadow-2xl shadow-violet-950/25 transition-transform duration-300 hover:translate-y-[-4px] sm:p-8"
           >
             <h2 className="text-2xl font-bold text-white">{content.form_heading}</h2>
             <p className="mt-2 text-sm text-slate-400">{content.form_instructions}</p>
