@@ -524,7 +524,7 @@ export default function Messages() {
         title="Contact Messages"
         subtitle="Review incoming customer requests and track their status."
         extra={
-          <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap md:w-auto md:max-w-2xl md:flex-nowrap md:items-center">
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:flex-nowrap">
             <div
               className={`flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold ${
                 isLive
@@ -536,7 +536,7 @@ export default function Messages() {
               {isLive ? "Live" : "Connecting..."}
             </div>
 
-            <div className="relative w-full sm:flex-1 sm:min-w-[180px] md:max-w-sm">
+            <div className="relative w-full sm:flex-1 sm:min-w-[180px] lg:max-w-xs">
               <Search
                 size={18}
                 className={`absolute left-3 top-1/2 -translate-y-1/2 ${
@@ -561,7 +561,7 @@ export default function Messages() {
               onChange={(event) =>
                 setStatusFilter(event.target.value as "All" | MessageStatus)
               }
-              className={`w-full rounded-xl border px-3 py-2.5 outline-none transition sm:w-auto sm:min-w-[130px] md:w-40 ${
+              className={`w-full rounded-xl border px-3 py-2.5 outline-none transition sm:w-auto sm:min-w-[130px] lg:w-40 ${
                 isDarkTheme
                   ? "border-white/10 bg-slate-950 text-white focus:border-violet-500"
                   : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"
@@ -605,7 +605,7 @@ export default function Messages() {
           </div>
         ) : (
           <>
-            <div className="hidden overflow-x-auto md:block">
+            <div className="hidden overflow-x-auto lg:block">
               <table className="min-w-full text-left text-sm">
               <thead
                 className={
@@ -666,7 +666,7 @@ export default function Messages() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
                         <button
                           type="button"
                           onClick={() => openMessage(message)}
@@ -705,7 +705,7 @@ export default function Messages() {
             </div>
 
             <div
-              className={`divide-y md:hidden ${isDarkTheme ? "divide-white/10" : "divide-slate-200"}`}
+              className={`divide-y lg:hidden ${isDarkTheme ? "divide-white/10" : "divide-slate-200"}`}
             >
               {filteredMessages.map((message) => (
                 <div

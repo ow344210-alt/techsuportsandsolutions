@@ -2,7 +2,7 @@
 import { CheckCircle2, MessageSquare, Lock, TrendingUp, Headset } from "lucide-react";
 import { useSiteContent } from "../hooks/useSiteContent";
 import Section from "./ui/Section";
-import GlowBackground from "./ui/GlowBackground";
+import { BackgroundDecorations } from "./background";
 
 const icons = [CheckCircle2, MessageSquare, Lock, TrendingUp, Headset];
 
@@ -30,7 +30,7 @@ function CoreValues() {
   }));
 
   return (
-    <Section className="bg-[#08101D] text-white" decoration={<GlowBackground />}>
+    <Section className="bg-[#07101D] text-white" decoration={<BackgroundDecorations preset="cards" />}>
       <div className="mb-16 max-w-3xl" data-aos="fade-up">
         <span className="inline-block rounded-full border border-purple-500/30 bg-purple-500/10 px-5 py-2 text-sm tracking-[3px] text-purple-300">
           {content.badge_text}

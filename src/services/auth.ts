@@ -1,4 +1,5 @@
 import { supabase } from "../supabase/client";
+import { env } from "../config/env";
 
 export async function login(
   email: string,
@@ -30,8 +31,7 @@ export async function forgotPassword(
   return await supabase.auth.resetPasswordForEmail(
     email,
     {
-      redirectTo:
-        "http://localhost:5173/reset-password",
+      redirectTo: `${env.APP_URL}/reset-password`,
     }
   );
 }

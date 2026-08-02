@@ -4,6 +4,7 @@ export const SEO_DEFAULTS = {
   title: env.APP_NAME,
   description:
     "Full-service software house specializing in web development, mobile apps, cloud solutions, and ongoing support.",
+  url: env.APP_URL,
   image: `${env.APP_URL}/og-image.png`,
   type: "website",
   siteName: env.APP_NAME,

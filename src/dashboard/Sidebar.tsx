@@ -16,6 +16,7 @@ import {
   Cpu,
   Building2,
   ImagePlus,
+  MoveHorizontal,
 } from "lucide-react";
 
 import { useEffect } from "react";
@@ -79,6 +80,7 @@ const NAV_ITEMS = [
   { to: "/dashboard/settings", label: "Settings", icon: Settings, end: false },
   { to: "/dashboard/support", label: "Support", icon: LifeBuoy, end: false },
   { to: "/dashboard/tech-stack", label: "Tech Stack", icon: Cpu, end: false },
+  { to: "/dashboard/marquee", label: "Marquee", icon: MoveHorizontal, end: false },
   {
     to: "/dashboard/projects",
     label: "Projects",

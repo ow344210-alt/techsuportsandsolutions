@@ -170,6 +170,7 @@ import {
 import { fetchActiveTech } from "../lib/techStack";
 import type { TechItem } from "../lib/techStack";
 import Section from "./ui/Section";
+import { BackgroundDecorations } from "./background";
 
 // Honest capability fallback shown only when no tech is published yet.
 // CMS content always takes priority over this list.
@@ -746,14 +747,18 @@ function TechStack() {
     items.length > 0 ? items.map((item) => ({ name: item.name, category: item.category })) : FALLBACK_TECH;
 
   return (
-    <Section spacing="tight" className="bg-[#0B1220] text-white">
-      <div className="mb-10 flex justify-center" data-aos="fade-up">
+    <Section
+      spacing="tight"
+      className="bg-[#091426] text-white pb-10! md:pb-12!"
+      decoration={<BackgroundDecorations preset="grid" density="subtle" />}
+    >
+      <div className="mb-12 flex justify-center" data-aos="fade-up">
         <span className="inline-flex rounded-full border border-purple-500/30 bg-purple-500/10 px-5 py-2 text-sm tracking-[3px] text-purple-300">
           TECHNOLOGIES WE BUILD
         </span>
       </div>
       {loading ? (
-        <div className="flex flex-wrap items-center justify-center gap-5">
+        <div className="flex flex-wrap items-center justify-center gap-8">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="flex w-32 flex-col items-center gap-3 px-3 py-4 sm:w-36"><div className="h-20 w-20 animate-pulse rounded-full bg-white/10" /><div className="h-4 w-20 animate-pulse bg-white/10" /><div className="h-3 w-14 animate-pulse bg-white/10" /></div>
           ))}
@@ -761,12 +766,12 @@ function TechStack() {
       ) : (
         <div className="marquee-hover marquee-viewport" data-aos="fade-up">
           <div className="marquee-track-left">
-            <div className="flex shrink-0 gap-5 pr-5">
+            <div className="flex shrink-0 gap-8 pr-8">
               {displayed.map((tech, index) => (
                 <TechItemDisplay key={index} name={tech.name} category={tech.category} />
               ))}
             </div>
-            <div className="marquee-copy flex shrink-0 gap-5 pr-5" aria-hidden="true" inert>
+            <div className="marquee-copy flex shrink-0 gap-8 pr-8" aria-hidden="true" inert>
               {displayed.map((tech, index) => (
                 <TechItemDisplay key={`copy-${index}`} name={tech.name} category={tech.category} />
               ))}

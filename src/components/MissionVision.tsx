@@ -1,6 +1,7 @@
 import { Target, Eye } from "lucide-react";
 import { useSiteContent } from "../hooks/useSiteContent";
 import Section from "./ui/Section";
+import { BackgroundDecorations } from "./background";
 
 function MissionVision() {
   const { content } = useSiteContent("mission-vision", {
@@ -10,12 +11,11 @@ function MissionVision() {
     vision_text: "To be the trusted technology partner businesses turn to first, known for honesty, quality, and long-term relationships.",
   });
 
-  const dotGrid = (
-    <div className="absolute inset-0 opacity-[0.04] [background-image:linear-gradient(rgba(255,255,255,.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.12)_1px,transparent_1px)] [background-size:70px_70px]" />
-  );
-
   return (
-    <Section className="bg-[#0B1220] text-white" decoration={dotGrid}>
+    <Section
+      className="bg-[#091426] text-white"
+      decoration={<BackgroundDecorations preset="grid" density="subtle" />}
+    >
       <div className="grid gap-8 md:grid-cols-2">
         <div data-aos="fade-right" className="glass-card flex flex-col p-8 sm:p-10">
           <div className="icon-box mb-6">

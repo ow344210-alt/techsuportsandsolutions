@@ -20,9 +20,6 @@ vi.mock("../hooks/useSiteContent", () => ({
       consent_text: "I agree to the privacy policy and consent to being contacted.",
       footer_note: "Validation happens in the browser.",
       response_time_note: "We typically respond within 2 hours.",
-      cta_heading: "Ready to get started?",
-      cta_text: "Let's discuss your project.",
-      cta_button_text: "Get in Touch",
     },
   })),
 }));

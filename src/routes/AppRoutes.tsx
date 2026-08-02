@@ -31,6 +31,7 @@ const FooterLinksManager = lazy(
   () => import("../dashboard/FooterLinksManager"),
 );
 const HeroSliderManager = lazy(() => import("../dashboard/HeroSliderManager"));
+const MarqueeManager = lazy(() => import("../dashboard/MarqueeManager"));
 const Support = lazy(() => import("../dashboard/Support"));
 const TechStackManager = lazy(() => import("../dashboard/TechStackManager"));
 const IndustriesManager = lazy(() => import("../dashboard/IndustriesManager"));
@@ -159,6 +160,7 @@ export default function AppRoutes() {
           <Route path="industries" element={<IndustriesManager />} />
           <Route path="footer-links" element={<FooterLinksManager />} />
           <Route path="hero-slider" element={<HeroSliderManager />} />
+          <Route path="marquee" element={<MarqueeManager />} />
           <Route path="support" element={<Support />} />
           <Route path="profile" element={<Profile />} />
           <Route path="settings" element={<Settings />} />

@@ -27,7 +27,7 @@ function ContactInfoCard() {
     sunday_status: "Closed",
     emergency_note: "24/7 emergency support available for active clients",
     emergency_phone: "0327-8226689",
-    response_time: "Under 2 hours",
+    response_time: "As soon as possible",
     facebook_url: "",
     instagram_url: "https://www.instagram.com/techsupportsandsolutions/",
     linkedin_url: "",

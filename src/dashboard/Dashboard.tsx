@@ -26,6 +26,17 @@ type RecentMessage = {
   status: "New" | "Read";
 };
 
+// The database stores lowercase workflow statuses ("new", "read", ...). Map
+// them to the display labels used by the dashboard stat cards and badges.
+function normalizeMessageStatus(value: string | null | undefined): "New" | "Read" {
+  const key = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  return key === "new" ? "New" : "Read";
+}
+
 const statCardConfig = [
   {
     title: "Total Messages",
@@ -69,12 +80,12 @@ const loadMessageStats = useCallback(async () => {
     const { data, error } = await supabase.from("contact_messages").select("status");
 
     if (!error && data) {
-      const stats = data as Array<{ status: string }>;
+      const stats = data as Array<{ status: string | null }>;
 
       setMessageStats({
         total: stats.length,
-        new: stats.filter((item) => item.status === "New").length,
-        read: stats.filter((item) => item.status === "Read").length,
+        new: stats.filter((item) => normalizeMessageStatus(item.status) === "New").length,
+        read: stats.filter((item) => normalizeMessageStatus(item.status) === "Read").length,
       });
     }
     setLoading(false);
@@ -88,7 +99,11 @@ const loadMessageStats = useCallback(async () => {
       .limit(5);
 
     if (!error && data) {
-      setRecentMessages(data as RecentMessage[]);
+      setRecentMessages(
+        (data as Array<{ status: string | null } & Omit<RecentMessage, "status">>).map(
+          (message) => ({ ...message, status: normalizeMessageStatus(message.status) }),
+        ),
+      );
     }
   }, []);
 

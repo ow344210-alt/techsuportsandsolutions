@@ -3,13 +3,13 @@
 // grid patterns) outside the max-width container; `children` renders inside it.
 import type { ReactNode } from "react";
 
-type SectionSpacing = "default" | "tight";
+type SectionSpacing = "default" | "tight" | "compact";
 type SectionWidth = "wide" | "text" | "form";
 
 const MAX_WIDTH_CLASSES: Record<SectionWidth, string> = {
   wide: "max-w-7xl",
   text: "max-w-4xl",
-  form: "max-w-6xl",
+  form: "max-w-7xl",
 };
 
 interface SectionProps {
@@ -29,12 +29,17 @@ export default function Section({
   spacing = "default",
   maxWidth = "wide",
 }: SectionProps) {
-  const paddingClass = spacing === "tight" ? "py-14 md:py-16" : "py-20 md:py-28";
+  const paddingClass =
+    spacing === "tight"
+      ? "py-14 md:py-16"
+      : spacing === "compact"
+        ? "py-10 md:py-12 lg:py-14"
+        : "py-16 md:py-20";
 
   return (
-    <section id={id} className={`relative overflow-hidden ${paddingClass} ${className}`}>
+    <section id={id} className={`relative isolate overflow-hidden ${paddingClass} ${className}`}>
       {decoration}
-      <div className={`relative mx-auto ${MAX_WIDTH_CLASSES[maxWidth]} px-6`}>{children}</div>
+      <div className={`relative z-10 mx-auto ${MAX_WIDTH_CLASSES[maxWidth]} px-6`}>{children}</div>
     </section>
   );
 }

@@ -142,6 +142,7 @@ export default function ResetPassword() {
 
                 <input
                   id="new-password"
+                  name="new-password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   placeholder="At least 6 characters"
@@ -171,6 +172,7 @@ export default function ResetPassword() {
 
                 <input
                   id="confirm-password"
+                  name="confirm-password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   placeholder="Re-enter your password"

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Star, Quote } from "lucide-react";
+import { Star, Quote, ArrowRight } from "lucide-react";
 import { fetchActiveTestimonials } from "../lib/testimonials";
 import type { Testimonial } from "../lib/testimonials";
 import Section from "./ui/Section";
-import GlowBackground from "./ui/GlowBackground";
+import SectionIntro from "./ui/SectionIntro";
+import Button from "./ui/Button";
+import { BackgroundDecorations } from "./background";
 
 // Honest fallback shown only when no testimonials are published yet.
 // CMS content always takes priority over this list.
@@ -14,7 +16,7 @@ const FALLBACK_TESTIMONIALS: Testimonial[] = [
     company_name: "E-Commerce",
     profile_image_url: null,
     review:
-      "The team rebuilt our website and set up our Google Business profile. Enquiries from search have more than doubled since launch.",
+      "The team rebuilt our website and optimized our Google Business profile with a clear focus on performance and customer experience. Communication remained smooth throughout the project, and every stage was delivered professionally. Since launch, our search enquiries have more than doubled, the website loads faster, and managing daily updates has become much easier.",
     rating: 5,
     status: "Published",
     is_active: true,
@@ -28,7 +30,7 @@ const FALLBACK_TESTIMONIALS: Testimonial[] = [
     company_name: "Logistics",
     profile_image_url: null,
     review:
-      "They moved our files and email to the cloud and now everything just works — no more 'the server is down' mornings.",
+      "They moved our files, email accounts, and essential systems to the cloud without disrupting our daily operations. The process was clearly planned and finished on schedule, and our team can now work securely from anywhere.",
     rating: 5,
     status: "Published",
     is_active: true,
@@ -42,7 +44,7 @@ const FALLBACK_TESTIMONIALS: Testimonial[] = [
     company_name: "Healthcare",
     profile_image_url: null,
     review:
-      "From the first call to the final invoice, communication was clear and the system they built does exactly what they said it would.",
+      "Communication was clear and professional from the first consultation to final delivery. They took time to understand our workflow, and the system they built is reliable and easy for our staff to use.",
     rating: 5,
     status: "Published",
     is_active: true,
@@ -51,6 +53,134 @@ const FALLBACK_TESTIMONIALS: Testimonial[] = [
     updated_at: "",
   },
 ];
+
+function StarRow({ rating, size = 14 }: { rating: number; size?: number }) {
+  return (
+    <div className="flex items-center gap-1" aria-label={`${rating} out of 5 stars`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star key={i} size={size} className={i < rating ? "fill-amber-400 text-amber-400" : "text-slate-600"} />
+      ))}
+    </div>
+  );
+}
+
+function Avatar({ testimonial, size = 44 }: { testimonial: Testimonial; size?: number }) {
+  const ring = "ring-2 ring-purple-400/30";
+  if (testimonial.profile_image_url) {
+    return (
+      <img
+        src={testimonial.profile_image_url}
+        alt={testimonial.client_name}
+        width={size}
+        height={size}
+        loading="lazy"
+        className={`rounded-full object-cover ${ring}`}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 font-bold text-white ${ring}`}
+      style={{ width: size, height: size, fontSize: size * 0.42 }}
+      aria-hidden="true"
+    >
+      {testimonial.client_name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+function FeaturedCard({ testimonial }: { testimonial: Testimonial }) {
+  return (
+    <figure className="group relative flex flex-col overflow-hidden rounded-[20px] border border-purple-500/25 bg-gradient-to-br from-[#111a2e] to-[#0b0f1a] p-8 transition-all duration-500 hover:-translate-y-1 hover:border-purple-400/50 hover:shadow-[0_24px_60px_-12px_rgba(168,85,247,0.4)]">
+      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-purple-600/25 blur-[90px] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-pink-500/20 blur-[90px] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+      <div className="relative flex items-start justify-between gap-4">
+        <Quote size={42} strokeWidth={1.25} className="text-violet-500/40" />
+        {testimonial.company_name && (
+          <span className="inline-flex items-center rounded-full border border-purple-400/30 bg-purple-500/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-purple-300">
+            {testimonial.company_name}
+          </span>
+        )}
+      </div>
+
+      <blockquote className="relative mt-5 flex-grow text-base leading-7 text-gray-300">“{testimonial.review}”</blockquote>
+
+      <div className="relative mt-5">
+        <StarRow rating={testimonial.rating} size={16} />
+      </div>
+
+      <figcaption className="relative mt-6 flex items-center gap-4 border-t border-white/10 pt-6">
+        <Avatar testimonial={testimonial} size={56} />
+        <div className="min-w-0">
+          <p className="text-lg font-bold text-white">{testimonial.client_name}</p>
+          {testimonial.company_name && <p className="truncate text-sm text-gray-400">{testimonial.company_name}</p>}
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+
+function CompactCard({ testimonial }: { testimonial: Testimonial }) {
+  return (
+    <figure className="group relative flex h-full flex-col rounded-[20px] border border-white/10 bg-[#0b0f1a] p-7 transition-all duration-500 hover:-translate-y-1 hover:border-purple-400/40 hover:shadow-[0_20px_50px_-15px_rgba(168,85,247,0.35)]">
+      <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-purple-600/20 blur-[70px] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+      <div className="relative">
+        <StarRow rating={testimonial.rating} size={14} />
+      </div>
+
+      <blockquote className="relative mt-4 flex-grow text-sm leading-7 text-gray-300">
+        {testimonial.review}
+      </blockquote>
+
+      <figcaption className="relative mt-6 flex items-center gap-3 border-t border-white/10 pt-5">
+        <Avatar testimonial={testimonial} size={44} />
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-white">{testimonial.client_name}</p>
+          {testimonial.company_name && <p className="truncate text-xs text-gray-400">{testimonial.company_name}</p>}
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+
+function TestimonialsSkeleton() {
+  return (
+    <div className="flex h-full flex-col gap-6" data-aos="fade-up">
+      <div className="animate-pulse rounded-[20px] border border-white/10 bg-white/5 p-8">
+        <div className="h-10 w-10 rounded-full bg-white/5" />
+        <div className="mt-5 h-4 w-3/4 rounded bg-white/5" />
+        <div className="mt-3 h-4 w-1/2 rounded bg-white/5" />
+        <div className="mt-5 h-4 w-24 rounded bg-white/5" />
+        <div className="mt-6 flex items-center gap-4 border-t border-white/10 pt-6">
+          <div className="h-14 w-14 rounded-full bg-white/5" />
+          <div className="space-y-2">
+            <div className="h-4 w-28 rounded bg-white/5" />
+            <div className="h-3 w-20 rounded bg-white/5" />
+          </div>
+        </div>
+      </div>
+      <div className="grid flex-1 gap-6 sm:grid-cols-2">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="animate-pulse rounded-[20px] border border-white/10 bg-white/5 p-7">
+            <div className="h-4 w-24 rounded bg-white/5" />
+            <div className="mt-4 h-4 w-full rounded bg-white/5" />
+            <div className="mt-2 h-4 w-2/3 rounded bg-white/5" />
+            <div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-5">
+              <div className="h-11 w-11 rounded-full bg-white/5" />
+              <div className="space-y-2">
+                <div className="h-4 w-24 rounded bg-white/5" />
+                <div className="h-3 w-16 rounded bg-white/5" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -74,56 +204,54 @@ export default function TestimonialsSection() {
     };
   }, []);
 
-  const displayedTestimonials = testimonials.length > 0 ? testimonials : FALLBACK_TESTIMONIALS;
+  const displayed = testimonials.length > 0 ? testimonials : FALLBACK_TESTIMONIALS;
+  const featured = displayed[0];
+  const compact = displayed.slice(1, 3);
 
   return (
-    <Section className="bg-[#0B1220] text-white" decoration={<GlowBackground />}>
-      <div className="mb-12 max-w-3xl" data-aos="fade-up">
-        <span className="inline-flex rounded-full border border-purple-500/30 bg-purple-500/10 px-5 py-2 text-sm tracking-[3px] text-purple-300">TESTIMONIALS</span>
-        <h2 className="mt-8 text-4xl font-bold leading-tight md:text-5xl">
-          What Our <span className="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">Clients Say</span>
-        </h2>
-        <p className="mt-4 max-w-2xl text-lg leading-8 text-gray-400">Real feedback from businesses that have partnered with us to grow through technology.</p>
-      </div>
+    <Section
+      className="bg-[#091426] pt-[100px]! text-white"
+      decoration={<BackgroundDecorations preset="cards" />}
+    >
+      <div className="grid items-stretch gap-12 lg:grid-cols-[42fr_58fr] lg:gap-20">
+        <SectionIntro
+          eyebrow="TESTIMONIALS"
+          title1="What Our"
+          title2="Clients Say"
+          className="flex h-full flex-col"
+        >
+          <p className="mt-8 max-w-[520px] text-justify text-lg leading-[1.75] text-gray-400">
+            We believe long-term partnerships are built on trust, transparency, and consistent results. Our clients
+            rely on us for dependable technology solutions, responsive support, and a commitment to delivering projects
+            that meet real business goals. From startups to established enterprises, their feedback reflects the quality,
+            professionalism, and value we bring to every engagement. Every project begins by listening — understanding
+            your challenges, your timeline, and the outcomes that matter most — so we can build solutions that fit the
+            way you actually work. It is this focus on understanding, combined with proactive communication and a
+            dedication to long-term value, that keeps clients returning to us year after year.
+          </p>
+          <div className="mt-auto pt-12">
+            <Button to="/contact" variant="primary" size="lg" icon={<ArrowRight size={18} />}>
+              Become a Client
+            </Button>
+          </div>
+        </SectionIntro>
 
-      {loading ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="animate-pulse rounded-2xl border border-white/10 bg-white/5 p-8">
-              <div className="h-4 w-10 rounded bg-white/5" /><div className="mt-4 h-20 rounded bg-white/5" /><div className="mt-6 h-4 w-1/3 rounded bg-white/5" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {displayedTestimonials.map((testimonial) => (
-            <div key={testimonial.id} className="group relative rounded-2xl border border-white/10 bg-[#0b0f1a] p-8 transition-all duration-500 hover:border-purple-500/40 hover:-translate-y-1" data-aos="fade-up">
-              <Quote size={32} className="text-violet-500/30" />
-              <p className="mt-4 text-sm leading-7 text-gray-300">{testimonial.review}</p>
-              <div className="mt-6 flex items-center gap-1">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <Star key={i} size={14} className={i < testimonial.rating ? "fill-amber-400 text-amber-400" : "text-slate-600"} />
+        {loading ? (
+          <TestimonialsSkeleton />
+        ) : (
+          <div className="flex h-full flex-col gap-6" data-aos="fade-up">
+            {featured && <FeaturedCard testimonial={featured} />}
+
+            {compact.length > 0 && (
+              <div className="grid flex-1 gap-6 sm:grid-cols-2">
+                {compact.map((testimonial) => (
+                  <CompactCard key={testimonial.id} testimonial={testimonial} />
                 ))}
               </div>
-              <div className="mt-4 flex items-center gap-3">
-                {testimonial.profile_image_url ? (
-                  <img src={testimonial.profile_image_url} alt={testimonial.client_name} width={40} height={40} className="h-10 w-10 rounded-full object-cover" loading="lazy" />
-                ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/20 text-violet-300">
-                    <span className="text-sm font-bold">{testimonial.client_name.charAt(0)}</span>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-semibold text-white">{testimonial.client_name}</p>
-                  {testimonial.company_name && (
-                    <p className="text-xs text-gray-400">{testimonial.company_name}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
     </Section>
   );
 }

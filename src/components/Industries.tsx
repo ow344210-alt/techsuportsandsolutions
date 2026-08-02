@@ -1,22 +1,45 @@
 // src/components/Industries.tsx
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
+import { getIndustryIcon } from "../lib/industryIcons";
 import { fetchActiveIndustries } from "../lib/industries";
 import type { Industry } from "../lib/industries";
 import Section from "./ui/Section";
-import GlowBackground from "./ui/GlowBackground";
+import SectionIntro from "./ui/SectionIntro";
+import Button from "./ui/Button";
+import { BackgroundDecorations } from "./background";
 
 // Honest fallback shown only when no industries are published yet.
 // CMS content always takes priority over this list.
 const FALLBACK_INDUSTRIES: string[] = [
-  "Retail & E-Commerce",
+  "Retail & Ecommerce",
   "Healthcare",
   "Real Estate",
   "Education",
-  "Logistics & Transport",
-  "Finance & Accounting",
+  "Logistics",
+  "Finance",
   "Manufacturing",
-  "Hospitality",
+  "Restaurants",
 ];
+
+function IndustryCard({ name, index }: { name: string; index: number }) {
+  return (
+    <div
+      key={index}
+      data-aos="fade-up"
+      data-aos-delay={index * 40}
+      className="group flex h-[86px] items-center gap-3.5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_32px_-18px_rgba(0,0,0,0.8)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-purple-400/50 hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_26px_-8px_rgba(168,85,247,0.45)] lg:px-5"
+    >
+      {createElement(getIndustryIcon(name), {
+        className: "size-5 shrink-0 text-purple-300/70 transition-colors duration-300 group-hover:text-purple-300",
+      })}
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-200 transition-colors duration-300 group-hover:text-white">
+        {name}
+      </span>
+      <ArrowRight className="size-4 shrink-0 text-gray-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-purple-300" />
+    </div>
+  );
+}
 
 function Industries() {
   const [items, setItems] = useState<Industry[]>([]);
@@ -42,34 +65,42 @@ function Industries() {
   const displayed = items.length > 0 ? items.map((item) => item.name) : FALLBACK_INDUSTRIES;
 
   return (
-    <Section className="bg-[#08101D] text-white" decoration={<GlowBackground />}>
-      <div className="mb-12 max-w-3xl" data-aos="fade-up">
-        <span className="inline-block rounded-full border border-purple-500/30 bg-purple-500/10 px-5 py-2 text-sm tracking-[3px] text-purple-300">
-          WHO WE WORK WITH
-        </span>
-        <h2 className="mt-8 text-4xl font-bold leading-tight md:text-5xl">
-          Industries <span className="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">We Serve</span>
-        </h2>
-      </div>
+    <Section
+      className="bg-[#07101D] text-white lg:[&>div:last-child]:!max-w-[1400px]"
+      decoration={<BackgroundDecorations preset="splitRight" />}
+    >
+      <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-x-20">
+        <div className="lg:col-span-5">
+          <SectionIntro
+            eyebrow="WHO WE WORK WITH"
+            title1="Industries"
+            title2="We Serve"
+            description="We partner with businesses across diverse industries to build technology that supports real operational needs. From healthcare, retail, and finance to logistics, education, manufacturing, hospitality, and construction, our team delivers secure, scalable, and practical digital solutions tailored to each industry's unique challenges. By understanding your workflows, compliance requirements, and business goals, we create technology that improves efficiency, streamlines operations, enhances customer experiences, and supports sustainable long-term growth."
+            className="[&>p]:max-w-[540px]"
+          />
+          <Button
+            to="/contact"
+            variant="primary"
+            size="lg"
+            icon={<ArrowRight size={18} />}
+            className="mt-8"
+          >
+            Work With Us
+          </Button>
+        </div>
 
-      {loading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl border border-white/10 bg-white/5" />
-          ))}
+        <div className="lg:col-span-7">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {loading ? (
+              [...Array(7)].map((_, i) => (
+                <div key={i} className="h-[86px] animate-pulse rounded-2xl border border-white/10 bg-white/5" />
+              ))
+            ) : (
+              displayed.map((name, index) => <IndustryCard key={index} name={name} index={index} />)
+            )}
+          </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" data-aos="fade-up">
-          {displayed.map((name, index) => (
-            <div
-              key={index}
-              className="glass-card flex items-center justify-center p-5 text-center text-sm font-semibold text-gray-300 transition hover:-translate-y-1 hover:text-white"
-            >
-              {name}
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
     </Section>
   );
 }

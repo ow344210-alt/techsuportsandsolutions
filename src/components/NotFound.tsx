@@ -1,15 +1,14 @@
 import { Home, Mail, AlertTriangle } from "lucide-react";
 import SEO from "./seo/SEO";
 import Button from "./ui/Button";
+import { BackgroundDecorations } from "./background";
 
 export default function NotFound() {
   return (
     <>
       <SEO title="404 — Page Not Found" noIndex />
-      <div className="relative flex min-h-[60vh] flex-col items-center justify-center overflow-hidden px-4 text-center">
-      {/* Background Glow */}
-      <div className="pointer-events-none absolute -left-40 top-1/4 h-[300px] w-[300px] rounded-full bg-purple-600/10 blur-[150px]" />
-      <div className="pointer-events-none absolute -right-40 bottom-1/4 h-[300px] w-[300px] rounded-full bg-pink-500/10 blur-[150px]" />
+      <div className="relative isolate flex min-h-[60vh] flex-col items-center justify-center overflow-hidden px-4 text-center">
+      <BackgroundDecorations preset="heroMinimal" />
 
       {/* Decorative background "404" */}
       <span className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none text-[18rem] font-black text-white/[0.02] sm:text-[24rem]">

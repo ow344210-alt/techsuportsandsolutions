@@ -1,6 +1,6 @@
 import { useSiteContent } from "../hooks/useSiteContent";
 import Section from "./ui/Section";
-import GlowBackground from "./ui/GlowBackground";
+import { BackgroundDecorations } from "./background";
 
 function Timeline() {
   const { content } = useSiteContent("timeline", {
@@ -29,7 +29,11 @@ function Timeline() {
   ];
 
   return (
-    <Section className="bg-[#08101D] text-white" maxWidth="text" decoration={<GlowBackground />}>
+    <Section
+      className="bg-[#07101D] text-white"
+      maxWidth="text"
+      decoration={<BackgroundDecorations preset="timeline" />}
+    >
       <div className="mb-16 max-w-3xl" data-aos="fade-up">
         <span className="inline-block rounded-full border border-purple-500/30 bg-purple-500/10 px-5 py-2 text-sm tracking-[3px] text-purple-300">
           {content.badge_text}
@@ -45,7 +49,7 @@ function Timeline() {
       <div className="relative space-y-10 border-l-2 border-white/10 pl-8">
         {milestones.map((item, index) => (
           <div key={index} data-aos="fade-up" className="relative">
-            <div className="absolute -left-[41px] flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-500 ring-4 ring-[#08101D]" />
+            <div className="absolute -left-[41px] flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-500 ring-4 ring-[#07101D]" />
             <span className="text-sm font-semibold text-purple-400">{item.year}</span>
             <h3 className="mt-1 text-xl font-bold">{item.title}</h3>
             <p className="mt-2 leading-7 text-gray-400">{item.desc}</p>

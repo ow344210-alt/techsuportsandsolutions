@@ -29,7 +29,7 @@ function HeroSlider() {
   }, [slides.length, goToNext]);
 
   if (loading) {
-    return <div className="h-screen w-full animate-pulse bg-[#08101D]" />;
+    return <div className="h-screen w-full animate-pulse bg-[#07101D]" />;
   }
 
   // No admin-created slides yet — fall back to the original static Hero
@@ -38,7 +38,7 @@ function HeroSlider() {
   }
 
   return (
-    <section id="home" className="relative min-h-svh w-full overflow-hidden bg-[#08101D] text-white">
+    <section id="home" className="relative min-h-svh w-full overflow-hidden bg-[#07101D] text-white">
       {slides.map((slide, index) => {
         const isActive = index === activeIndex;
 

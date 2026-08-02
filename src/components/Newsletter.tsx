@@ -49,7 +49,7 @@ function Newsletter() {
   }
 
   return (
-    <Section id="newsletter" className="bg-[#08101D] text-white">
+    <Section id="newsletter" className="bg-[#07101D] text-white">
       <div
         data-aos="fade-up"
         className="relative overflow-hidden rounded-3xl border border-purple-500/25 bg-gradient-to-br from-[#141C2D] via-[#0E1627] to-[#141C2D] px-6 py-14 sm:px-10 sm:py-16 lg:px-16"
@@ -79,6 +79,9 @@ function Newsletter() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
             <input
               type="email"
+              id="newsletter-email"
+              name="newsletter-email"
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder={content.input_placeholder}

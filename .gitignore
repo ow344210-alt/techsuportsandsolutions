@@ -12,3 +12,5 @@ supabase/.temp/
 node_modules/
 .env
 .kilo/
+
+dev-server.log

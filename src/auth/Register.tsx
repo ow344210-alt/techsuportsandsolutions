@@ -86,6 +86,9 @@ export default function Register() {
               <User size={20} className="mr-3 text-gray-400" />
               <input
                 type="text"
+                id="register-name"
+                name="register-name"
+                autoComplete="name"
                 placeholder="Enter your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -100,6 +103,9 @@ export default function Register() {
               <Mail size={20} className="mr-3 text-gray-400" />
               <input
                 type="email"
+                id="register-email"
+                name="register-email"
+                autoComplete="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -114,6 +120,9 @@ export default function Register() {
               <Lock size={20} className="mr-3 text-gray-400" />
               <input
                 type={showPassword ? "text" : "password"}
+                id="register-password"
+                name="register-password"
+                autoComplete="new-password"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -131,6 +140,9 @@ export default function Register() {
               <Lock size={20} className="mr-3 text-gray-400" />
               <input
                 type={showConfirmPassword ? "text" : "password"}
+                id="register-confirm-password"
+                name="register-confirm-password"
+                autoComplete="new-password"
                 placeholder="Confirm your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

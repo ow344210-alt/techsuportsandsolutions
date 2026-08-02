@@ -1,8 +1,8 @@
 import { ArrowUpRight } from "lucide-react";
 import { useDynamicPageSections } from "../hooks/useDynamicPageSections";
 import Section from "./ui/Section";
-import GlowBackground from "./ui/GlowBackground";
 import Button from "./ui/Button";
+import { BackgroundDecorations } from "./background";
 
 interface DynamicPageSectionsProps {
   page: string;
@@ -18,7 +18,11 @@ export default function DynamicPageSections({ page }: DynamicPageSectionsProps) 
   return (
     <>
       {sections.map((section) => (
-        <Section key={section.group.id} className="bg-[#08101D] text-white" decoration={<GlowBackground />}>
+        <Section
+          key={section.group.id}
+          className="bg-[#07101D] text-white"
+          decoration={<BackgroundDecorations preset="cards" />}
+        >
           <div className="mb-12 max-w-3xl" data-aos="fade-up">
             <h2 className="text-4xl font-bold leading-tight md:text-5xl">{section.group.group_title}</h2>
           </div>

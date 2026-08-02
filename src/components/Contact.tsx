@@ -1,6 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import type { FormEvent } from "react";
-import { MessageSquareText, Send, ShieldCheck, Clock } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Lightbulb,
+  ListChecks,
+  Mail,
+  MapPin,
+  MessageSquareText,
+  Phone,
+  Search,
+  Send,
+  ShieldCheck,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { submitContactMessage } from "../lib/contactMessages";
 import { useSiteContent } from "../hooks/useSiteContent";
@@ -11,6 +24,8 @@ import FAQ from "./FAQ";
 import Section from "./ui/Section";
 import Button from "./ui/Button";
 import SEO from "./seo/SEO";
+import { BackgroundDecorations } from "./background";
+import customerConsultationImg from "../assets/services/customer-consultation.png";
 
 const initialForm = {
   fullName: "",
@@ -19,6 +34,43 @@ const initialForm = {
   message: "",
   consent: false,
 };
+
+const WHAT_HAPPENS_NEXT = [
+  {
+    icon: MessageSquareText,
+    title: "We review your message",
+    description:
+      "Our team reads every inquiry and routes it to the specialist who fits your request.",
+  },
+  {
+    icon: Search,
+    title: "We reach out",
+    description:
+      "We contact you at the email or phone you provided to understand your goals and answer questions.",
+  },
+  {
+    icon: CheckCircle2,
+    title: "We propose next steps",
+    description:
+      "You get clear options, timelines, and recommendations so you know exactly what happens next.",
+  },
+];
+
+const GUIDANCE_ITEMS = [
+  "The goal or outcome you're hoping for",
+  "Your current setup — platforms, tools, or systems you already use",
+  "A rough timeline or deadline, if you have one",
+  "Your budget range, if you're comfortable sharing it",
+  "Any examples or reference sites you like",
+  "Anything you've already tried",
+];
+
+function scrollToContactForm() {
+  const formSection = document.getElementById("contact-form");
+  if (formSection) {
+    formSection.scrollIntoView({ behavior: "smooth" });
+  }
+}
 
 export default function ContactPage() {
   const [form, setForm] = useState(initialForm);
@@ -34,21 +86,18 @@ export default function ContactPage() {
 
   const { content } = useSiteContent("contact", {
     badge_text: "Contact Us",
-    heading: "Let's talk about your next project.",
+    heading: "Let's talk about what your business needs.",
     subheading:
-      "Reach out for support, general questions, or custom solutions. We'll get back to you as soon as possible.",
+      "Tell us about your project, ask a question, or request support. We'll route your message to the right person and get back to you as soon as possible.",
     trust_statement:
       "Your information is safe with us. We never share your details with third parties.",
     form_heading: "Send us a message",
     form_instructions:
-      "Fill out the form below and we'll get back to you within 2 hours during business hours.",
+      "Fill out the form below and our team will get back to you as soon as possible.",
     submit_btn_text: "Send Message",
     consent_text: "I agree to the privacy policy and consent to being contacted.",
     footer_note: "Prefer email? Write to techsupportsandsolutions@gmail.com and we'll point you to the right person.",
-    response_time_note: "We typically respond within 2 hours during business hours.",
-    cta_heading: "Ready to get started?",
-    cta_text: "Let's discuss your project and how we can help you achieve your goals.",
-    cta_button_text: "Get in Touch",
+    response_time_note: "We review every message and get back to you as soon as we can.",
   });
 
   function handleChange(
@@ -123,32 +172,159 @@ export default function ContactPage() {
       setIsSubmitting(false);
     }
   }
-  const glow = (
-    <>
-      <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
-      <div className="absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-pink-500/20 blur-3xl" />
-    </>
-  );
+
+  const heroGlow = <BackgroundDecorations preset="heroMinimal" />;
 
   return (
     <>
       <SEO
         title="Contact Us"
-        description="Get in touch with Tech Supports & Solutions for support, general questions, or custom software solutions. We typically respond within 2 business hours."
+        description="Get in touch with Tech Supports & Solutions for support, general questions, or custom software solutions."
         canonicalPath="/contact"
       />
-      <Section id="contact" className="bg-slate-950 pt-28 text-white md:pt-40" maxWidth="form" decoration={glow}>
-        <div className="mb-12 max-w-3xl">
-          <span className="inline-flex rounded-full border border-violet-400/30 bg-gradient-to-r from-violet-600/20 to-pink-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-violet-200">
-            {content.badge_text}
-          </span>
-          <h1 className="mt-5 text-4xl font-extrabold tracking-tight leading-tight sm:text-5xl">{content.heading}</h1>
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-300 sm:text-xl">{content.subheading}</p>
-          <div className="mt-4 flex items-center gap-2 text-sm text-slate-400">
-            <ShieldCheck size={16} />
-            {content.trust_statement}
+
+      {/* Hero */}
+      <Section
+        id="contact"
+        className="bg-[#07101D] pt-20 pb-12 text-white md:pt-24 md:pb-16 lg:pt-28"
+        decoration={heroGlow}
+      >
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <span className="inline-flex rounded-full border border-violet-400/30 bg-gradient-to-r from-violet-600/20 to-pink-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-violet-200">
+              {content.badge_text}
+            </span>
+            <h1 className="mt-5 text-4xl font-extrabold tracking-tight leading-tight text-white sm:text-5xl lg:text-6xl">
+              {content.heading}
+            </h1>
+            <p className="mt-4 max-w-xl text-lg leading-8 text-slate-300 sm:text-xl">
+              {content.subheading}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Button
+                variant="primary"
+                size="lg"
+                icon={<Send size={18} />}
+                iconPosition="left"
+                onClick={scrollToContactForm}
+              >
+                Send Your Inquiry
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                to="/services"
+                icon={<ArrowRight size={18} />}
+                iconPosition="right"
+              >
+                Explore Our Services
+              </Button>
+            </div>
+            <div className="mt-6 flex items-center gap-2 text-sm text-slate-400">
+              <ShieldCheck size={16} className="shrink-0 text-violet-400" />
+              {content.trust_statement}
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 shadow-2xl shadow-violet-950/40">
+              <img
+                src={customerConsultationImg}
+                alt="A consultant speaking with a customer about their project"
+                className="h-auto w-full rounded-3xl object-contain"
+                loading="eager"
+              />
+            </div>
+            <div className="absolute -left-3 top-6 hidden items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur-md sm:flex">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600/20 text-violet-300">
+                <Clock size={18} />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Office hours</p>
+                <p className="text-sm font-semibold text-white">Mon–Fri, 9:00–6:00</p>
+              </div>
+            </div>
+            <div className="absolute -right-3 bottom-6 hidden items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur-md sm:flex">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/15 text-pink-300">
+                <Mail size={18} />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Email us</p>
+                <p className="text-sm font-semibold text-white">
+                  techsupportsandsolutions@gmail.com
+                </p>
+              </div>
+            </div>
           </div>
         </div>
+      </Section>
+
+      {/* Contact Methods */}
+      <Section
+        className="bg-[#07101D] text-white"
+        spacing="tight"
+        decoration={<BackgroundDecorations preset="cards" />}
+      >
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <a
+            href="mailto:techsupportsandsolutions@gmail.com"
+            className="group rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-400/40 hover:shadow-xl hover:shadow-violet-950/25"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-pink-500/10 text-violet-300">
+              <Mail size={20} />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-white">Email Us</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-400">
+              techsupportsandsolutions@gmail.com
+            </p>
+          </a>
+
+          <a
+            href="tel:03278226689"
+            className="group rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-400/40 hover:shadow-xl hover:shadow-violet-950/25"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-pink-500/10 text-violet-300">
+              <Phone size={20} />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-white">Call Us</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-400">0327-8226689</p>
+          </a>
+
+          <a
+            href="https://www.google.com/maps/search/?api=1&query=Head+Quarter+Karachi+Sindh+Pakistan"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-400/40 hover:shadow-xl hover:shadow-violet-950/25"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-pink-500/10 text-violet-300">
+              <MapPin size={20} />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-white">Visit Us</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-400">Head Quarter Karachi, Sindh, Pakistan</p>
+          </a>
+
+          <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-pink-500/10 text-violet-300">
+              <Clock size={20} />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-white">Office Hours</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-400">
+              Mon–Fri, 9:00 AM–6:00 PM
+              <br />
+              Sat · Sun closed
+            </p>
+          </div>
+        </div>
+      </Section>
+
+      {/* Contact Form + Supporting Info */}
+      <Section
+        id="contact-form"
+        className="bg-[#07101D] text-white"
+        spacing="tight"
+        maxWidth="form"
+        decoration={<BackgroundDecorations preset="splitRight" />}
+      >
         <div className="grid gap-8 lg:grid-cols-2 items-start">
           <div className="h-full">
             <ContactInfoCard />
@@ -166,6 +342,9 @@ export default function ContactPage() {
                 <span className="mb-2 block text-sm font-semibold uppercase text-slate-200">Full Name</span>
                 <input
                   type="text"
+                  id="fullName"
+                  name="fullName"
+                  autoComplete="name"
                   value={form.fullName}
                   onChange={(event) => handleChange("fullName", event.target.value)}
                   placeholder="Your full name"
@@ -177,6 +356,9 @@ export default function ContactPage() {
                 <span className="mb-2 block text-sm font-semibold uppercase text-slate-200">Email</span>
                 <input
                   type="email"
+                  id="email"
+                  name="email"
+                  autoComplete="email"
                   value={form.email}
                   onChange={(event) => handleChange("email", event.target.value)}
                   placeholder="you@example.com"
@@ -189,6 +371,8 @@ export default function ContactPage() {
               <span className="mb-2 block text-sm font-semibold uppercase text-slate-200">Subject</span>
               <input
                 type="text"
+                id="subject"
+                name="subject"
                 value={form.subject}
                 onChange={(event) => handleChange("subject", event.target.value)}
                 placeholder="How can we help?"
@@ -199,6 +383,8 @@ export default function ContactPage() {
             <label className="mt-5 block">
               <span className="mb-2 block text-sm font-semibold uppercase text-slate-200">Message</span>
               <textarea
+                id="message"
+                name="message"
                 rows={8}
                 value={form.message}
                 onChange={(event) => handleChange("message", event.target.value)}
@@ -210,6 +396,8 @@ export default function ContactPage() {
             <label className="mt-5 flex items-center gap-3">
               <input
                 type="checkbox"
+                id="consent"
+                name="consent"
                 checked={form.consent}
                 onChange={(event) => handleChange("consent", event.target.checked)}
                 className="h-5 w-5 rounded border-white/20 bg-slate-950 text-violet-500 focus:ring-violet-500/40"
@@ -261,35 +449,129 @@ export default function ContactPage() {
             </div>
           </form>
         </div>
+      </Section>
 
-        {/* Full-width map below the cards */}
-        <div className="mt-8">
+      {/* Full-width map below the cards */}
+      <section aria-label="Office location" className="bg-[#07101D] pb-16 md:pb-20">
+        <div className="mx-auto max-w-7xl px-6">
           <ContactMap />
         </div>
-      </Section>
+      </section>
 
-      {/* Final call to action */}
-      <Section id="contact-cta" className="bg-slate-900 text-white" maxWidth="form">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{content.cta_heading}</h2>
-          <p className="mt-4 max-w-2xl mx-auto text-lg leading-8 text-slate-300">{content.cta_text}</p>
-          <Button
-            variant="primary"
-            size="lg"
-            className="mt-8"
-            onClick={() => {
-              const contactSection = document.getElementById("contact");
-              if (contactSection) {
-                contactSection.scrollIntoView({ behavior: "smooth" });
-              }
-            }}
-          >
-            {content.cta_button_text}
-          </Button>
+      {/* What Happens After You Submit */}
+      <Section
+        className="bg-[#091426] text-white"
+        decoration={<BackgroundDecorations preset="grid" />}
+      >
+        <div className="mx-auto max-w-3xl text-center">
+          <span className="inline-flex rounded-full border border-violet-400/30 bg-violet-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-violet-200">
+            What happens next
+          </span>
+          <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            After you send your message
+          </h2>
+          <p className="mt-4 text-lg leading-8 text-slate-300">
+            We keep the process simple and keep you informed at every step.
+          </p>
+        </div>
+
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          {WHAT_HAPPENS_NEXT.map((step, index) => {
+            const Icon = step.icon;
+            return (
+              <div
+                key={step.title}
+                className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-slate-950/80 to-slate-950/60 p-7 transition-all duration-300 hover:-translate-y-1 hover:border-violet-400/40"
+              >
+                <span className="absolute right-6 top-6 text-5xl font-extrabold text-white/5">
+                  {index + 1}
+                </span>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-pink-500/10 text-violet-300">
+                  <Icon size={20} />
+                </div>
+                <h3 className="mt-5 text-lg font-semibold text-white">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{step.description}</p>
+              </div>
+            );
+          })}
         </div>
       </Section>
 
-      <FAQ section="contact-faq" page="contact-faq" />
+      {/* Project Inquiry Guidance */}
+      <Section
+        className="bg-[#07101D] text-white"
+        decoration={<BackgroundDecorations preset="splitLeft" />}
+      >
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <span className="inline-flex rounded-full border border-violet-400/30 bg-violet-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-violet-200">
+              Before you write
+            </span>
+            <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">
+              Make your inquiry count
+            </h2>
+            <p className="mt-4 text-lg leading-8 text-slate-300">
+              You don't need perfect answers — but a few details help us give
+              you a more useful response on the first reply.
+            </p>
+
+            <ul className="mt-8 space-y-4">
+              {GUIDANCE_ITEMS.map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <CheckCircle2
+                    size={20}
+                    className="mt-0.5 shrink-0 text-violet-400"
+                  />
+                  <span className="text-base text-slate-300">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-pink-500/10 text-violet-300">
+              <Lightbulb size={20} />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold text-white">
+              Not sure where to start?
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              No problem. Send whatever you know and mention that you'd like
+              help shaping the idea — we'll ask a few questions and help you
+              clarify your requirements before we talk about solutions.
+            </p>
+            <div className="mt-6 rounded-2xl bg-slate-950/70 p-5">
+              <div className="flex items-center gap-2 text-violet-300">
+                <ListChecks size={18} className="shrink-0" />
+                <span className="text-xs font-semibold uppercase tracking-wider">
+                  A quick example
+                </span>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-400">
+                "We run a small retail business and want a website where
+                customers can view our products and contact us. We have no
+                existing website and a deadline of about two months."
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="mt-6"
+              fullWidth
+              onClick={scrollToContactForm}
+            >
+              Write Your Message
+            </Button>
+          </div>
+        </div>
+      </Section>
+
+      {/* FAQ */}
+      <FAQ
+        id="contact-faq"
+        section="contact-faq"
+        pages={["contact-faq", "home", "services-faq", "projects-faq"]}
+      />
+
       <DynamicPageSections page="contact" />
     </>
   );

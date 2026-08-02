@@ -66,7 +66,8 @@ export async function fetchAllServices(): Promise<Service[]> {
   const { data, error } = await supabase
     .from("services")
     .select("*")
-    .order("order_index", { ascending: true });
+    .order("order_index", { ascending: true })
+    .order("created_at", { ascending: true });
 
   if (error) throw error;
 
@@ -83,7 +84,8 @@ export async function fetchActiveServices(): Promise<Service[]> {
     .select("*")
     .eq("is_active", true)
     .eq("status", "Published")
-    .order("order_index", { ascending: true });
+    .order("order_index", { ascending: true })
+    .order("created_at", { ascending: true });
 
   if (error) throw error;
 

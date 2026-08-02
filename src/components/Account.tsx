@@ -173,6 +173,8 @@ export default function Account() {
                 <Camera size={16} />
                 <input
                   type="file"
+                  id="avatar-upload"
+                  name="avatar"
                   accept="image/*"
                   hidden
                   onChange={(event) => {
@@ -209,6 +211,9 @@ export default function Account() {
               >
                 <User size={20} className={`mr-3 ${isDarkTheme ? "text-slate-400" : "text-slate-500"}`} />
                 <input
+                  id="account-name"
+                  name="account-name"
+                  autoComplete="name"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   className="w-full bg-transparent outline-none"
@@ -227,6 +232,8 @@ export default function Account() {
               >
                 <Mail size={20} className={`mr-3 ${isDarkTheme ? "text-slate-400" : "text-slate-500"}`} />
                 <input
+                  id="account-email"
+                  name="account-email"
                   disabled
                   value={user?.email || ""}
                   className={`w-full bg-transparent outline-none ${isDarkTheme ? "text-slate-400" : "text-slate-500"}`}

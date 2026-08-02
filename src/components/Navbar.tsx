@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Menu, X, ArrowRight, LogOut, UserCircle } from "lucide-react";
-import logo from "../assets/logo.png";
+import logo from "../assets/nav.png";
 import { useAuth } from "../hooks/useAuth";
 import Button from "./ui/Button";
 import { NAV_LINKS } from "../config/nav.config";
@@ -38,7 +38,7 @@ function Navbar() {
     <header
       className={`fixed top-0 left-0 z-50 w-full transition-all duration-500 ${
         scroll
-          ? "border-b border-white/10 bg-[#08101D]/80 backdrop-blur-2xl shadow-lg shadow-purple-500/5"
+          ? "border-b border-white/10 bg-[#07101D]/80 backdrop-blur-2xl shadow-lg shadow-purple-500/5"
           : "bg-transparent"
       }`}
     >
@@ -121,7 +121,7 @@ function Navbar() {
 
       <div
         id="mobile-navigation"
-        className={`overflow-hidden border-t border-white/10 bg-[#08101D]/95 backdrop-blur-xl transition-all duration-500 xl:hidden ${
+        className={`overflow-hidden border-t border-white/10 bg-[#07101D]/95 backdrop-blur-xl transition-all duration-500 xl:hidden ${
           menuOpen ? "max-h-[40rem]" : "max-h-0 border-none"
         }`}
       >

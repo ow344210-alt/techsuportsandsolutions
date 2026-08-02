@@ -2,6 +2,7 @@ import logo from "../assets/logo.png";
 import { ArrowRight, Play } from "lucide-react";
 import { useSiteContent } from "../hooks/useSiteContent";
 import Button from "./ui/Button";
+import { BackgroundDecorations } from "./background";
 
 function Hero() {
   const { content } = useSiteContent("hero", {
@@ -12,32 +13,16 @@ function Hero() {
       "Tech Supports & Solutions helps businesses solve IT challenges, improve security, build scalable software and deliver reliable technical support through modern technology.",
     primary_btn_text: "Start Project",
     secondary_btn_text: "Explore Services",
-    stat1_value: "Full-Service",
-    stat1_label: "Web, mobile & software",
-    stat2_value: "Ongoing",
-    stat2_label: "Support after launch",
-    stat3_value: "Transparent",
-    stat3_label: "Fixed quotes & updates",
   });
 
   return (
     <section
       id="home"
-      className="relative overflow-hidden bg-[#08101D] pt-24 text-white"
+      className="relative isolate overflow-hidden bg-[#07101D] pt-5 text-white"
     >
-      {/* Background Glow */}
+      <BackgroundDecorations preset="hero" density="rich" />
 
-      <div className="absolute -left-40 top-0 h-[500px] w-[500px] rounded-full bg-purple-600/20 blur-[170px]" />
-
-      <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600/10 blur-[180px]" />
-
-      <div className="absolute -right-40 bottom-0 h-[500px] w-[500px] rounded-full bg-pink-500/20 blur-[170px]" />
-
-      {/* Grid */}
-
-      <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.12)_1px,transparent_1px)] [background-size:70px_70px]" />
-
-      <div className="relative mx-auto grid min-h-screen max-w-7xl items-center gap-16 px-6 py-20 lg:grid-cols-2">
+      <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-16 px-6 py-20 lg:grid-cols-2">
         {/* LEFT */}
 
         <div data-aos="fade-right" className="text-center lg:text-left">
@@ -46,7 +31,7 @@ function Hero() {
             {content.badge_text}
           </span>
 
-          <h1 className="mt-8 text-5xl font-extrabold leading-tight sm:text-6xl lg:text-5xl">
+          <h1 className="mt-8 text-5xl font-extrabold leading-tight sm:text-6xl">
             {content.heading_line1}
             <span className="block gradient-text">{content.heading_line2}</span>
           </h1>
@@ -72,43 +57,27 @@ function Hero() {
               {content.secondary_btn_text}
             </Button>
           </div>
-
-          {/* Stats */}
-
-          {/* <div className="mt-16 grid grid-cols-3 gap-8 text-center lg:text-left">
-            <div>
-              <h3 className="text-4xl font-bold gradient-text">{content.stat1_value}</h3>
-
-              <p className="mt-2 text-gray-400">{content.stat1_label}</p>
-            </div>
-
-            <div>
-              <h3 className="text-4xl font-bold gradient-text">{content.stat2_value}</h3>
-
-              <p className="mt-2 text-gray-400">{content.stat2_label}</p>
-            </div>
-
-            <div>
-              <h3 className="text-4xl font-bold gradient-text">{content.stat3_value}</h3>
-
-              <p className="mt-2 text-gray-400">{content.stat3_label}</p>
-            </div>
-          </div> */}
         </div>
 
         {/* RIGHT */}
 
-        <div
-          data-aos="zoom-in"
-          className="relative flex items-center justify-center"
-        >
-          <div className="absolute h-[420px] w-[420px] rounded-full bg-gradient-to-r from-purple-600/30 to-pink-500/30 blur-[120px]" />
+        <div className="relative flex items-center justify-center">
+          <div className="hero-logo-glow absolute h-[420px] w-[420px] rounded-full bg-gradient-to-r from-purple-600 to-sky-400 blur-[120px]" />
 
-          <img
-            src={logo}
-            alt="Tech Supports & Solutions"
-            className="relative z-10 w-[280px] animate-float drop-shadow-[0_25px_80px_rgba(168,85,247,.55)] transition duration-500 hover:scale-105 sm:w-[360px] lg:w-[480px]"
-          />
+          <div className="hero-smoke absolute inset-0" aria-hidden="true">
+            <div className="hero-smoke-blob hero-smoke-blob-a" />
+            <div className="hero-smoke-blob hero-smoke-blob-b" />
+            <div className="hero-smoke-blob hero-smoke-blob-c" />
+            <div className="hero-smoke-blob hero-smoke-blob-d" />
+          </div>
+
+          <div className="hero-logo-hover relative z-10 transition-transform duration-500 ease-in-out hover:-translate-y-2">
+            <img
+              src={logo}
+              alt="Tech Supports & Solutions"
+              className="hero-logo-float w-[280px] sm:w-[360px] lg:w-[480px]"
+            />
+          </div>
         </div>
       </div>
     </section>

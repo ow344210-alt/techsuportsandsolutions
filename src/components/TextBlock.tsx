@@ -24,7 +24,7 @@ function TextBlock({ section, defaultEyebrow = "", defaultHeading = "", defaultP
   }
 
   return (
-    <Section spacing="tight" maxWidth="text" className="bg-[#0B1220] text-white">
+    <Section spacing="tight" maxWidth="text" className="bg-[#091426] text-white">
       <div className="text-center" data-aos="fade-up">
         <span className="inline-block rounded-full border border-purple-500/30 bg-purple-500/10 px-5 py-2 text-sm tracking-[3px] text-purple-300">
           {content.eyebrow}

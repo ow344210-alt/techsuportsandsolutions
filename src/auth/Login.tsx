@@ -108,6 +108,7 @@ export default function Login() {
 
               <input
                 id="email"
+                name="email"
                 type="email"
                 autoComplete="email"
                 placeholder="Enter your email"
@@ -128,6 +129,7 @@ export default function Login() {
 
               <input
                 id="password"
+                name="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="Enter your password"
@@ -149,6 +151,8 @@ export default function Login() {
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center gap-2 text-gray-300">
               <input
+                id="rememberMe"
+                name="rememberMe"
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}

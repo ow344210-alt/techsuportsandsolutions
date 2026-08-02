@@ -14,8 +14,8 @@ function SEO({
   const pageTitle = title ? `${title} | ${SEO_DEFAULTS.title}` : SEO_DEFAULTS.title;
   const pageDescription = description ?? SEO_DEFAULTS.description;
   const canonicalUrl = canonicalPath
-    ? `${SEO_DEFAULTS.image.replace("/og-image.png", "")}${canonicalPath}`
-    : SEO_DEFAULTS.image.replace("/og-image.png", "");
+    ? `${SEO_DEFAULTS.url}${canonicalPath}`
+    : SEO_DEFAULTS.url;
   const ogTitleValue = ogTitle ?? title ?? SEO_DEFAULTS.title;
   const ogDescriptionValue = ogDescription ?? description ?? SEO_DEFAULTS.description;
   const ogImageValue = ogImage ?? SEO_DEFAULTS.image;

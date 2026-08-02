@@ -17,7 +17,7 @@ html {
 body {
   margin: 0;
   overflow-x: hidden;
-  background: #08101d;
+  background: #07101d;
   color: #fff;
   font-family: Inter, sans-serif;
   line-height: 1.6;
@@ -94,6 +94,176 @@ section {
 
 .animate-float {
   animation: float 5s ease-in-out infinite;
+}
+
+/* Soft purple-blue glow behind the hero logo. It slowly breathes between
+   20% and 30% opacity on an infinite loop. */
+.hero-logo-glow {
+  animation: hero-glow-breathe 8s ease-in-out infinite;
+}
+
+@keyframes hero-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Aurora smoke behind the hero logo. It fades in and expands gently from the
+   logo center once on page load, then stays still (blobs carry the motion). */
+.hero-smoke {
+  animation: hero-smoke-enter 2.5s ease-in-out forwards;
+}
+
+@keyframes hero-smoke-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hero-smoke-blob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+.hero-smoke-blob-a {
+  width: 380px;
+  height: 380px;
+  margin-left: -300px;
+  margin-top: -240px;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.45) 0%,
+    rgba(139, 92, 246, 0) 65%
+  );
+  opacity: 0.5;
+  animation: hero-smoke-drift 12s ease-in-out infinite;
+}
+
+.hero-smoke-blob-b {
+  width: 340px;
+  height: 340px;
+  margin-left: -100px;
+  margin-top: -260px;
+  background: radial-gradient(
+    circle,
+    rgba(56, 189, 248, 0.45) 0%,
+    rgba(56, 189, 248, 0) 65%
+  );
+  opacity: 0.45;
+  animation: hero-smoke-drift-b 11s ease-in-out infinite;
+}
+
+.hero-smoke-blob-c {
+  width: 360px;
+  height: 360px;
+  margin-left: -270px;
+  margin-top: -70px;
+  background: radial-gradient(
+    circle,
+    rgba(236, 72, 153, 0.4) 0%,
+    rgba(236, 72, 153, 0) 65%
+  );
+  opacity: 0.4;
+  animation: hero-smoke-drift-c 10s ease-in-out infinite;
+}
+
+.hero-smoke-blob-d {
+  width: 320px;
+  height: 320px;
+  margin-left: -80px;
+  margin-top: -50px;
+  background: radial-gradient(
+    circle,
+    rgba(56, 189, 248, 0.35) 0%,
+    rgba(139, 92, 246, 0.35) 60%,
+    rgba(139, 92, 246, 0) 75%
+  );
+  opacity: 0.45;
+  animation: hero-smoke-drift 13s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+@keyframes hero-smoke-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(16px, -12px) scale(1.07);
+  }
+}
+
+@keyframes hero-smoke-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-14px, 10px) scale(1.06);
+  }
+}
+
+@keyframes hero-smoke-drift-c {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(10px, 14px) scale(1.08);
+  }
+}
+
+/* Gentle, almost unnoticeable float for the hero logo. Starts after the smoke
+   has fully appeared. */
+.hero-logo-float {
+  animation: hero-logo-float 6s ease-in-out infinite;
+  animation-delay: 2.5s;
+}
+
+@keyframes hero-logo-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-logo-glow,
+  .hero-smoke,
+  .hero-smoke-blob,
+  .hero-logo-float {
+    animation: none;
+  }
+
+  .hero-logo-glow {
+    opacity: 0.25;
+  }
+
+  .hero-smoke {
+    opacity: 0.2;
+  }
 }
 
 /* Continuous marquee rows used by the Services sliders.
@@ -209,6 +379,73 @@ section {
     animation: none;
     transform: none;
     opacity: 0.35;
+  }
+}
+
+/* ==========================================================
+   BACKGROUND DECORATIONS
+   Motion applied to decorative layers. All animations are
+   disabled under prefers-reduced-motion; drift/float use
+   transform only so they never shift layout.
+========================================================== */
+
+@keyframes decoration-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.decoration-float {
+  animation: decoration-float 7s ease-in-out infinite;
+}
+
+@keyframes decoration-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(14px, -10px) scale(1.04);
+  }
+}
+
+.decoration-drift {
+  animation: decoration-drift 12s ease-in-out infinite;
+}
+
+@keyframes decoration-pulse {
+  0%,
+  100% {
+    opacity: var(--decoration-opacity, 0.1);
+  }
+
+  50% {
+    opacity: calc(var(--decoration-opacity, 0.1) * 0.55);
+  }
+}
+
+.decoration-pulse {
+  animation: decoration-pulse 6s ease-in-out infinite;
+}
+
+/* Keep at most one ambient decoration readable on small screens. */
+@media (max-width: 767px) {
+  .decoration-subtle-mobile {
+    opacity: 0.05 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decoration-float,
+  .decoration-drift,
+  .decoration-pulse {
+    animation: none;
   }
 }
 
@@ -331,5 +568,42 @@ section {
 @media(max-width:768px){
   .section-title{
     font-size:2.4rem;
+  }
+}
+
+/* ==========================================================
+   HOME PAGE — SECTION FLOW
+   Balanced vertical rhythm for every Home section (the Hero is
+   left untouched). Each section receives equal top and bottom
+   padding so the page reads as one consistent, premium flow.
+   The general-sibling combinator (`~`) matches a section even
+   when the Marquee strip (a div) sits between sections, and it
+   never targets the first section (the Hero).
+   Declared inside `@layer components`: for `!important`
+   declarations, earlier layers beat later layers, so these
+   values also override section-level Tailwind padding utilities
+   (e.g. `pb-16!`, `pt-[100px]!`). Scoped to `.home-page` so
+   other pages are unaffected. Internal section spacing stays
+   untouched.
+========================================================== */
+
+@layer components {
+  .home-page > section ~ section {
+    padding-top: 48px !important;
+    padding-bottom: 48px !important;
+  }
+
+  @media (min-width: 768px) {
+    .home-page > section ~ section {
+      padding-top: 64px !important;
+      padding-bottom: 64px !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .home-page > section ~ section {
+      padding-top: 72px !important;
+      padding-bottom: 72px !important;
+    }
   }
 }

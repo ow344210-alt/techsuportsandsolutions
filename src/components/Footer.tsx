@@ -17,13 +17,18 @@ import { fetchActiveServices } from "../lib/services";
 import type { Service } from "../lib/services";
 import { subscribeToNewsletter } from "../lib/newsletter";
 import Button from "./ui/Button";
+import { BackgroundDecorations } from "./background";
 
 // Shown only while the CMS has no active footer links — mirrors every main
-// navigation route so the column is never empty.
-const FALLBACK_QUICK_LINKS: Array<{ label: string; url: string }> = NAV_LINKS.map((link) => ({
-  label: link.name,
-  url: link.href,
-}));
+// navigation route so the column is never empty, plus a dedicated FAQ link that
+// drops visitors straight to the FAQ section on the Contact page.
+const FALLBACK_QUICK_LINKS: Array<{ label: string; url: string }> = [
+  ...NAV_LINKS.map((link) => ({
+    label: link.name,
+    url: link.href,
+  })),
+  { label: "FAQ", url: "/contact#contact-faq" },
+];
 
 // Shown only while the CMS has no published services — matches the service
 // names used across the site so the column is never empty.
@@ -143,12 +148,10 @@ function Footer() {
       : FALLBACK_SERVICES.map((title, index) => ({ key: `fallback-${index}`, title }));
 
   return (
-    <footer className="relative overflow-hidden border-t border-white/10 bg-[#050B16] text-white">
-      {/* Background Glow */}
-      <div className="pointer-events-none absolute -left-40 top-0 h-[350px] w-[350px] rounded-full bg-purple-600/10 blur-[150px]" />
-      <div className="pointer-events-none absolute -right-40 bottom-0 h-[350px] w-[350px] rounded-full bg-pink-500/10 blur-[150px]" />
+    <footer className="relative isolate overflow-hidden border-t border-white/10 bg-[#040A13] text-white">
+      <BackgroundDecorations preset="footer" />
 
-      <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
         {/* Newsletter strip */}
         <div className="mb-12 flex flex-col items-stretch gap-6 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl sm:mb-16 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="text-center lg:text-left">
@@ -164,6 +167,9 @@ function Footer() {
           >
             <input
               type="email"
+              id="footer-newsletter-email"
+              name="footer-newsletter-email"
+              autoComplete="email"
               value={newsletterEmail}
               onChange={(event) => setNewsletterEmail(event.target.value)}
               placeholder="Enter your email"
@@ -182,9 +188,9 @@ function Footer() {
           </form>
         </div>
 
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-12">
           {/* Company */}
-          <div className="sm:col-span-2 lg:col-span-1">
+          <div className="sm:col-span-2 lg:col-span-3">
             <Link to="/" aria-label="Tech Supports & Solutions home" className="inline-block">
               <img
                 src={logo}
@@ -198,7 +204,7 @@ function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <div className="lg:col-span-2">
             <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Quick Links</h3>
             {linksLoading ? (
               <div className="space-y-3">
@@ -237,7 +243,7 @@ function Footer() {
           </div>
 
           {/* Services — live from database, no duplicate entry needed */}
-          <div>
+          <div className="lg:col-span-4">
             <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Services</h3>
             {servicesLoading ? (
               <div className="space-y-3">
@@ -249,7 +255,7 @@ function Footer() {
                 ))}
               </div>
             ) : (
-              <ul className="space-y-3 text-sm text-gray-400 sm:space-y-4 sm:text-base">
+              <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-400 sm:text-base">
                 {servicesToShow.map((service) => (
                   <li key={service.key}>
                     <Link
@@ -265,7 +271,7 @@ function Footer() {
           </div>
 
           {/* Contact */}
-          <div>
+          <div className="lg:col-span-3">
             <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Contact</h3>
             <div className="space-y-4 text-sm text-gray-400">
               <a
