@@ -25,6 +25,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import { showConfirm } from "../lib/confirm";
+import { resetHistoryAndNavigate } from "../lib/resetHistory";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../context/ThemeContext.types";
 import logo from "../assets/logo.webp";
@@ -165,7 +166,7 @@ export default function Sidebar({
   async function logout() {
     const result = await showConfirm({
       title: "Sign out?",
-      text: "You will be returned to the home page.",
+      text: "You will be returned to the sign in page.",
       confirmButtonText: "Sign out",
       cancelButtonText: "Cancel",
       variant: "danger",
@@ -176,7 +177,7 @@ export default function Sidebar({
     try {
       await signOut();
       onClose?.();
-      navigate("/", { replace: true });
+      resetHistoryAndNavigate(navigate, "/login");
     } catch {
       toast.error("Unable to sign out. Please try again.");
     }

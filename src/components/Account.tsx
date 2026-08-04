@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../context/ThemeContext.types";
 import { showConfirm } from "../lib/confirm";
+import { resetHistoryAndNavigate } from "../lib/resetHistory";
 import { supabase } from "../supabase/client";
 import { fetchMyMessages } from "../lib/contactMessages";
 import type { ContactMessage } from "../lib/contactMessages";
@@ -116,7 +117,7 @@ export default function Account() {
   async function handleLogout() {
     const result = await showConfirm({
       title: "Sign out?",
-      text: "You will be returned to the home page.",
+      text: "You will be returned to the sign in page.",
       confirmButtonText: "Sign out",
       cancelButtonText: "Cancel",
       variant: "danger",
@@ -126,7 +127,7 @@ export default function Account() {
 
     try {
       await signOut();
-      navigate("/", { replace: true });
+      resetHistoryAndNavigate(navigate, "/login");
     } catch {
       toast.error("Unable to sign out. Please try again.");
     }

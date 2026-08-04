@@ -299,16 +299,16 @@ describe("Sidebar logout", () => {
     authValue.signOut = vi.fn(() => Promise.resolve());
   });
 
-  it("redirects to / after a confirmed logout", async () => {
+  it("redirects to the sign in page after a confirmed logout", async () => {
     swalFire.mockResolvedValue({ isConfirmed: true });
     const { container } = renderSidebarWithRoutes();
 
     fireEvent.click(desktopAside(container).querySelector("button")!);
 
     await waitFor(() => {
-      expect(screen.getByTestId("probe-location")).toHaveTextContent("/");
+      expect(screen.getByTestId("probe-location")).toHaveTextContent("/login");
     });
-    expect(screen.queryByText("Login Page")).not.toBeInTheDocument();
+    expect(screen.queryByText("Login Page")).toBeInTheDocument();
     expect(authValue.signOut).toHaveBeenCalled();
   });
 
