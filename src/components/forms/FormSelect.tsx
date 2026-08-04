@@ -1,19 +1,22 @@
 import { forwardRef } from "react";
-import type { SelectHTMLAttributes } from "react";
+import ResponsiveSelect from "../ui/ResponsiveSelect";
 
-interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+interface FormSelectProps {
   label?: string;
   name: string;
   required?: boolean;
   error?: string;
   helperText?: string;
   disabled?: boolean;
-  "aria-describedby"?: string;
   options: Array<{ value: string; label: string }>;
   placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  id?: string;
+  className?: string;
 }
 
-const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
+const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
   (
     {
       label,
@@ -22,24 +25,19 @@ const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
       error,
       helperText,
       disabled,
-      "aria-describedby": ariaDescribedby,
       options,
       placeholder,
+      value,
+      onChange,
       id,
       className,
-      ...selectProps
     },
     ref
   ) => {
     const selectId = id || name;
-    const errorId = `${name}-error`;
-    const helperId = `${name}-helper`;
-    const describedBy = [errorId, helperId, ariaDescribedby]
-      .filter(Boolean)
-      .join(" ");
 
     return (
-      <div className="w-full">
+      <div ref={ref} className="w-full">
         {label ? (
           <label
             htmlFor={selectId}
@@ -50,43 +48,27 @@ const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
           </label>
         ) : null}
 
-        <select
-          ref={ref}
+        <ResponsiveSelect
           id={selectId}
-          name={name}
+          value={value ?? ""}
+          onChange={onChange ?? (() => {})}
+          options={options}
+          placeholder={placeholder}
           disabled={disabled}
           required={required}
-          aria-invalid={!!error}
-          aria-describedby={describedBy || undefined}
-          className={[
-            "w-full h-14 rounded-xl border border-white/10 bg-slate-950 px-4 text-white outline-none transition",
-            "focus:ring-2 focus:ring-violet-500/40 focus:border-transparent",
-            disabled ? "opacity-60 cursor-not-allowed" : "",
-            error ? "border-red-500/80 focus:border-red-500/80 focus:ring-red-500/30" : "",
-            className || "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          {...selectProps}
-        >
-          {placeholder ? (
-            <option value="">{placeholder}</option>
-          ) : null}
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          error={error}
+          ariaLabel={label}
+          className={className}
+        />
 
         {error ? (
-          <p id={errorId} className="mt-1.5 text-xs text-red-400" role="alert">
+          <p id={`${name}-error`} className="mt-1.5 text-xs text-red-400" role="alert">
             {error}
           </p>
         ) : null}
 
         {helperText && !error ? (
-          <p id={helperId} className="mt-1.5 text-xs text-slate-400">
+          <p id={`${name}-helper`} className="mt-1.5 text-xs text-slate-400">
             {helperText}
           </p>
         ) : null}

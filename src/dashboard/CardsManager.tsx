@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, ImagePlus, Plus } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import AdminFormModal from "./components/AdminFormModal";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
 import {
   PAGES,
   createCard,
@@ -22,6 +22,8 @@ import {
   uploadCardImage,
 } from "../lib/contentCards";
 import type { CardGroup, ContentCard, ContentCardPayload } from "../lib/contentCards";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 
 const EMPTY_CARD_FORM: ContentCardPayload = {
   title: "",
@@ -57,8 +59,8 @@ export default function CardsManager() {
         const data = await fetchGroupsForPage(page, true);
         if (mounted) setGroups(data);
       } catch {
-        if (mounted) toast.error("Unable to load sections.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoadingGroups(false);
       }
     })();
@@ -83,7 +85,6 @@ export default function CardsManager() {
     event.preventDefault();
 
     if (!groupTitleInput.trim()) {
-      toast.error("Section title is required.");
       return;
     }
 
@@ -92,35 +93,38 @@ export default function CardsManager() {
       if (editingGroup) {
         const updated = await updateGroup(editingGroup.id, groupTitleInput.trim(), groupActiveInput);
         setGroups((current) => current.map((g) => (g.id === updated.id ? updated : g)));
-        toast.success("Section updated.");
       } else {
         const nextOrder = groups.length > 0 ? Math.max(...groups.map((g) => g.group_order)) + 1 : 0;
         const created = await createGroup(page, groupTitleInput.trim(), nextOrder);
         setGroups((current) => [...current, created]);
-        toast.success("Section created.");
       }
       setIsGroupFormOpen(false);
     } catch {
-      toast.error("Unable to save this section.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSavingGroup(false);
     }
   }
 
   async function handleDeleteGroup(id: string) {
-    const confirmed = window.confirm(
-      "Delete this section? All cards inside it will be deleted too.",
-    );
-    if (!confirmed) return;
+    const result = await showConfirm({
+      title: "Delete Group",
+      text: "This will permanently delete this group and all of its cards.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
 
     setDeletingGroupId(id);
     try {
       await deleteGroup(id);
       setGroups((current) => current.filter((g) => g.id !== id));
       if (expandedGroupId === id) setExpandedGroupId(null);
-      toast.success("Section deleted.");
+      toast.success("Group deleted successfully.");
     } catch {
-      toast.error("Unable to delete this section.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingGroupId(null);
     }
@@ -142,7 +146,7 @@ export default function CardsManager() {
       reordered.sort((a, b) => a.group_order - b.group_order);
       setGroups(reordered);
     } catch {
-      toast.error("Unable to reorder sections.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setReorderingGroupId(null);
     }
@@ -156,19 +160,15 @@ export default function CardsManager() {
         actionLabel="New Section"
         onAction={openAddGroup}
         extra={
-          <select
+          <ResponsiveSelect
             value={page}
-            onChange={(event) => setPage(event.target.value)}
-            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold outline-none transition ${
-              isDarkTheme ? "border-white/10 bg-slate-950 text-white focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"
-            }`}
-          >
-            {PAGES.map((p) => (
-              <option key={p} value={p}>
-                {p.charAt(0).toUpperCase() + p.slice(1)} page
-              </option>
-            ))}
-          </select>
+            onChange={setPage}
+            options={PAGES.map((p) => ({
+              value: p,
+              label: `${p.charAt(0).toUpperCase() + p.slice(1)} page`,
+            }))}
+            className="w-full min-w-0 max-w-full font-semibold sm:w-auto"
+          />
         }
       />
 
@@ -279,8 +279,8 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
         const data = await fetchCardsForGroup(groupId, true);
         if (mounted) setCards(data);
       } catch {
-        if (mounted) toast.error("Unable to load cards.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -310,12 +310,10 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB.");
       return;
     }
 
@@ -323,9 +321,8 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
     try {
       const url = await uploadCardImage(file);
       setForm((current) => ({ ...current, image_url: url }));
-      toast.success("Image uploaded.");
     } catch {
-      toast.error("Unable to upload image.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setUploadingImage(false);
     }
@@ -335,7 +332,6 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
     event.preventDefault();
 
     if (!form.title.trim()) {
-      toast.error("Title is required.");
       return;
     }
 
@@ -344,32 +340,37 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
       if (editingCard) {
         const updated = await updateCard(editingCard.id, form);
         setCards((current) => current.map((c) => (c.id === updated.id ? updated : c)));
-        toast.success("Card updated.");
       } else {
         const nextOrderIndex = cards.length > 0 ? Math.max(...cards.map((c) => c.order_index)) + 1 : 0;
         const created = await createCard(groupId, form, nextOrderIndex);
         setCards((current) => [...current, created]);
-        toast.success("Card added.");
       }
       setIsFormOpen(false);
     } catch {
-      toast.error("Unable to save this card.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(id: string) {
-    const confirmed = window.confirm("Delete this card?");
-    if (!confirmed) return;
+    const result = await showConfirm({
+      title: "Delete Card",
+      text: "This will permanently delete this card.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
 
     setDeletingId(id);
     try {
       await deleteCard(id);
       setCards((current) => current.filter((c) => c.id !== id));
-      toast.success("Card deleted.");
+      toast.success("Card deleted successfully.");
     } catch {
-      toast.error("Unable to delete this card.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -391,7 +392,7 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
       reordered.sort((a, b) => a.order_index - b.order_index);
       setCards(reordered);
     } catch {
-      toast.error("Unable to reorder cards.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setReorderingId(null);
     }

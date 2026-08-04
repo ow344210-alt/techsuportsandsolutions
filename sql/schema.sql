@@ -1,7 +1,20 @@
 -- =============================================
--- Tech Supports & Solutions — Complete Database Setup
--- Run this in the Supabase SQL Editor
+-- Tech Supports & Solutions — Schema Reference
 -- =============================================
+-- WARNING: This file is a READ-ONLY reference document.
+-- It must NOT be executed as a bootstrap script. The live
+-- database is managed exclusively by migration files under
+-- supabase/migrations/ (applied via supabase db push).
+--
+-- Migrations are the single source of truth for:
+--   - Storage bucket creation and RLS policies
+--   - Profile table grants and RLS policies
+--   - Admin RPCs (admin_update_user_role, admin_set_user_disabled)
+--   - Profile privilege revocations
+--
+-- This file documents the final secured schema state after
+-- all migrations are applied. If this file ever diverges
+-- from the migrations, the migrations win.
 
 -- =============================================
 -- 1. PROFILES (extends Supabase Auth users)
@@ -17,7 +30,14 @@ CREATE TABLE IF NOT EXISTS profiles (
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
 CREATE INDEX IF NOT EXISTS idx_profiles_disabled ON profiles(is_disabled);
 
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+-- RLS enforced. Profiles are never directly written by browser clients:
+--   INSERT is handled by the handle_new_user() trigger (SECURITY DEFINER).
+--   UPDATE role/is_disabled is handled by admin RPCs (SECURITY DEFINER).
+--   SELECT own row is the only direct access normal users have.
+--   Name and avatar are edited via auth.users.user_metadata, not this table.
+-- Applied by migrations 20260804000001 + 20260804000002:
+--   REVOKE INSERT, UPDATE, DELETE ON public.profiles FROM anon;
+--   REVOKE INSERT, UPDATE, DELETE ON public.profiles FROM authenticated;
 
 DROP POLICY IF EXISTS profiles_select_own ON profiles;
 CREATE POLICY profiles_select_own ON profiles
@@ -25,7 +45,12 @@ CREATE POLICY profiles_select_own ON profiles
 
 DROP POLICY IF EXISTS profiles_update_own ON profiles;
 CREATE POLICY profiles_update_own ON profiles
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS profiles_admin_all ON profiles;
+CREATE POLICY profiles_admin_all ON profiles
+  FOR ALL USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- =============================================
 -- 1b. ADMIN AUTHORIZATION FUNCTION
@@ -50,6 +75,67 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.is_admin() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.is_admin() FROM public;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+-- =============================================
+-- 1c. Admin RPCs (SECURITY DEFINER, applied by 20260804000001)
+--     Only authenticated users may call these; the function
+--     itself checks is_admin() server-side.
+-- =============================================
+
+CREATE OR REPLACE FUNCTION public.admin_update_user_role(
+  p_user_id UUID,
+  p_role TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins can change user roles.';
+  END IF;
+  IF p_role NOT IN ('admin', 'customer') THEN
+    RAISE EXCEPTION 'Invalid role value.';
+  END IF;
+  UPDATE public.profiles
+     SET role = p_role, updated_at = NOW()
+   WHERE id = p_user_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'User profile not found.';
+  END IF;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.admin_update_user_role(UUID, TEXT) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.admin_update_user_role(UUID, TEXT) FROM public;
+GRANT EXECUTE ON FUNCTION public.admin_update_user_role(UUID, TEXT) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.admin_set_user_disabled(
+  p_user_id UUID,
+  p_disabled BOOLEAN
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins can enable or disable accounts.';
+  END IF;
+  UPDATE public.profiles
+     SET is_disabled = COALESCE(p_disabled, false), updated_at = NOW()
+   WHERE id = p_user_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'User profile not found.';
+  END IF;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.admin_set_user_disabled(UUID, BOOLEAN) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.admin_set_user_disabled(UUID, BOOLEAN) FROM public;
+GRANT EXECUTE ON FUNCTION public.admin_set_user_disabled(UUID, BOOLEAN) TO authenticated;
 
 -- =============================================
 -- 2. HERO SLIDES
@@ -419,6 +505,7 @@ CREATE POLICY contact_messages_admin_all ON contact_messages
 CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT NOT NULL UNIQUE,
+  name TEXT,
   subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -636,3 +723,111 @@ DO $$ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
+
+-- =============================================
+-- 22. STORAGE OBJECTS POLICIES
+-- =============================================
+-- Applied by migration 20260804000000_reconcile_storage_rls.sql.
+-- Bucket creation (INSERT INTO storage.buckets) and
+-- ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY
+-- live in the live database and are managed outside migrations.
+-- This section documents the final hardened policy set only.
+
+-- Public read: anonymous visitors can read all content via getPublicUrl.
+DROP POLICY IF EXISTS storage_public_read ON storage.objects;
+CREATE POLICY storage_public_read ON storage.objects
+  FOR SELECT TO public
+  USING (
+    bucket_id IN (
+      'project-images', 'service-images', 'testimonial-images',
+      'website-images', 'hero-slides', 'content-images', 'avatars'
+    )
+  );
+
+-- Content buckets: admin-only INSERT.
+DROP POLICY IF EXISTS storage_authenticated_insert ON storage.objects;
+CREATE POLICY storage_authenticated_insert ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id IN (
+      'project-images', 'service-images', 'testimonial-images',
+      'website-images', 'hero-slides', 'content-images'
+    )
+    AND public.is_admin()
+  );
+
+-- Content buckets: admin-only UPDATE.
+DROP POLICY IF EXISTS storage_authenticated_update ON storage.objects;
+CREATE POLICY storage_authenticated_update ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (
+    bucket_id IN (
+      'project-images', 'service-images', 'testimonial-images',
+      'website-images', 'hero-slides', 'content-images'
+    )
+    AND public.is_admin()
+  )
+  WITH CHECK (
+    bucket_id IN (
+      'project-images', 'service-images', 'testimonial-images',
+      'website-images', 'hero-slides', 'content-images'
+    )
+    AND public.is_admin()
+  );
+
+-- Content buckets: admin-only DELETE.
+DROP POLICY IF EXISTS storage_authenticated_delete ON storage.objects;
+CREATE POLICY storage_authenticated_delete ON storage.objects
+  FOR DELETE TO authenticated
+  USING (
+    bucket_id IN (
+      'project-images', 'service-images', 'testimonial-images',
+      'website-images', 'hero-slides', 'content-images'
+    )
+    AND public.is_admin()
+  );
+
+-- Avatars: owner-or-admin INSERT.
+-- The app uploads avatars as "<user-id>.<ext>", so the filename's first
+-- dot-separated segment is the owning user's uuid.
+DROP POLICY IF EXISTS storage_avatars_insert_own ON storage.objects;
+CREATE POLICY storage_avatars_insert_own ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'avatars'
+    AND (
+      public.is_admin()
+      OR split_part(name, '.', 1) = auth.uid()::text
+    )
+  );
+
+-- Avatars: owner-or-admin UPDATE.
+DROP POLICY IF EXISTS storage_avatars_update_own ON storage.objects;
+CREATE POLICY storage_avatars_update_own ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (
+    bucket_id = 'avatars'
+    AND (
+      public.is_admin()
+      OR split_part(name, '.', 1) = auth.uid()::text
+    )
+  )
+  WITH CHECK (
+    bucket_id = 'avatars'
+    AND (
+      public.is_admin()
+      OR split_part(name, '.', 1) = auth.uid()::text
+    )
+  );
+
+-- Avatars: owner-or-admin DELETE.
+DROP POLICY IF EXISTS storage_avatars_delete_own ON storage.objects;
+CREATE POLICY storage_avatars_delete_own ON storage.objects
+  FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'avatars'
+    AND (
+      public.is_admin()
+      OR split_part(name, '.', 1) = auth.uid()::text
+    )
+  );

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Save, Trash2 } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import { useSiteContentContext } from "../contexts/SiteContentContext.types";
 import AdminFormModal from "./components/AdminFormModal";
 import AdminPageHeader from "./components/AdminPageHeader";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
 
 import {
   deleteContentField,
@@ -14,8 +14,10 @@ import {
   upsertContentField,
 } from "../lib/siteContent";
 import type { ContentField } from "../lib/siteContent";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 
-const KNOWN_SECTIONS = ["hero", "about", "process", "contact", "footer", "navbar", "services"];
+const KNOWN_SECTIONS = ["hero", "about", "process", "contact", "contact-info", "footer", "navbar", "services"];
 
 // Recommended max length per field type — based on where it's rendered in the design.
 // Short fields (headings, badges, buttons) break layout if too long; paragraph
@@ -67,8 +69,8 @@ export default function ContentManager() {
           setDrafts(map);
         }
       } catch {
-        if (mounted) toast.error("Unable to load content.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -92,27 +94,33 @@ export default function ContentManager() {
     try {
       const updated = await upsertContentField(field.section, field.field_key, newVal, field.field_type);
       setFields((current) => current.map((f) => (f.id === field.id ? updated : f)));
-      toast.success(`"${field.field_key}" updated.`);
       await refetch();
     } catch {
-      toast.error("Unable to save this field.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSavingKey(null);
     }
   }
 
   async function handleDelete(field: ContentField) {
-    const confirmed = window.confirm(`Delete "${field.field_key}" from ${field.section}?`);
-    if (!confirmed) return;
+    const result = await showConfirm({
+      title: "Delete Field",
+      text: "This will permanently delete this content field.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
 
     setDeletingId(field.id);
     try {
       await deleteContentField(field.id);
       setFields((current) => current.filter((f) => f.id !== field.id));
-      toast.success("Field deleted.");
       await refetch();
+      toast.success("Content field deleted successfully.");
     } catch {
-      toast.error("Unable to delete this field.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -122,7 +130,6 @@ export default function ContentManager() {
     event.preventDefault();
 
     if (!newKey.trim() || !newValue.trim()) {
-      toast.error("Field key and value are required.");
       return;
     }
 
@@ -131,13 +138,12 @@ export default function ContentManager() {
       const created = await upsertContentField(newSection, newKey.trim(), newValue.trim());
       setFields((current) => [...current, created]);
       setDrafts((current) => ({ ...current, [created.id]: created.field_value }));
-      toast.success("Field added.");
       await refetch();
       setNewKey("");
       setNewValue("");
       setIsAdding(false);
     } catch {
-      toast.error("Unable to add this field. It may already exist for this section.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setAdding(false);
     }
@@ -273,15 +279,11 @@ export default function ContentManager() {
           submitLabel="Add Field"
         >
           <FormField label="Section">
-            <select
+            <ResponsiveSelect
               value={newSection}
-              onChange={(event) => setNewSection(event.target.value)}
-              className={inputClass(isDarkTheme)}
-            >
-              {KNOWN_SECTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+              onChange={setNewSection}
+              options={KNOWN_SECTIONS.map((section) => ({ value: section, label: section }))}
+            />
           </FormField>
 
           <FormField label="Field Key" hint='Tip: keys containing "heading", "badge" or "btn" get a shorter recommended limit; "paragraph" or "desc" get a longer one.'>

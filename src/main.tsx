@@ -9,11 +9,14 @@ import App from "./App";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 
+import { Toaster } from "react-hot-toast";
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
       <ThemeProvider>
         <App />
+        <Toaster />
       </ThemeProvider>
     </AuthProvider>
   </StrictMode>

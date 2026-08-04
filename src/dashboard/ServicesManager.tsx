@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { ImagePlus, Star } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import AdminFormModal from "./components/AdminFormModal";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
 import {
   SERVICE_CATEGORIES,
   SERVICE_ICONS,
@@ -19,6 +19,8 @@ import {
 } from "../lib/services";
 import type { Service, ServiceIcon, ServicePayload, ServiceStatus } from "../lib/services";
 import { getServiceIcon } from "../lib/serviceIcons";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 
 const EMPTY_FORM: ServicePayload = {
   title: "",
@@ -57,8 +59,8 @@ export default function ServicesManager() {
         const data = await fetchAllServices();
         if (mounted) setServices(data);
       } catch {
-        if (mounted) toast.error("Unable to load services.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -97,7 +99,6 @@ export default function ServicesManager() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
       return;
     }
 
@@ -105,9 +106,8 @@ export default function ServicesManager() {
     try {
       const url = await uploadServiceImage(file);
       setForm((current) => ({ ...current, image_url: url }));
-      toast.success("Image uploaded.");
     } catch {
-      toast.error("Unable to upload image.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setUploadingImage(false);
     }
@@ -117,7 +117,6 @@ export default function ServicesManager() {
     event.preventDefault();
 
     if (!form.title.trim() || !form.description.trim()) {
-      toast.error("Title and description are required.");
       return;
     }
 
@@ -129,29 +128,31 @@ export default function ServicesManager() {
         setServices((current) =>
           current.map((service) => (service.id === updated.id ? updated : service)),
         );
-        toast.success("Service updated successfully.");
       } else {
         const nextOrderIndex =
           services.length > 0 ? Math.max(...services.map((s) => s.order_index)) + 1 : 0;
         const created = await createService(form, nextOrderIndex);
         setServices((current) => [...current, created]);
-        toast.success("Service added successfully.");
       }
 
       closeForm();
     } catch {
-      toast.error("Unable to save this service.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(id: string) {
-    const confirmed = window.confirm("Are you sure you want to delete this service?");
-
-    if (!confirmed) {
-      return;
-    }
+    const result = await showConfirm({
+      title: "Delete Service",
+      text: "This will permanently delete this service.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
 
     setDeletingId(id);
 
@@ -160,7 +161,7 @@ export default function ServicesManager() {
       setServices((current) => current.filter((service) => service.id !== id));
       toast.success("Service deleted successfully.");
     } catch {
-      toast.error("Unable to delete this service.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -186,7 +187,7 @@ export default function ServicesManager() {
       reordered.sort((a, b) => a.order_index - b.order_index);
       setServices(reordered);
     } catch {
-      toast.error("Unable to reorder services.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setReorderingId(null);
     }
@@ -208,9 +209,8 @@ export default function ServicesManager() {
       };
       const updated = await updateService(service.id, payload);
       setServices((current) => current.map((s) => (s.id === updated.id ? updated : s)));
-      toast.success(nextStatus === "Published" ? "Service published." : "Moved to draft.");
     } catch {
-      toast.error("Unable to update status.");
+      toast.error("Something went wrong. Please try again.");
     }
   }
 
@@ -252,28 +252,26 @@ export default function ServicesManager() {
           className={`${inputClass(isDarkTheme)} md:max-w-xs`}
         />
 
-        <select
+        <ResponsiveSelect
           value={categoryFilter}
-          onChange={(event) => setCategoryFilter(event.target.value)}
-          className={`${inputClass(isDarkTheme)} md:w-48`}
-        >
-          <option value="All">All Categories</option>
-          {SERVICE_CATEGORIES.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
+          onChange={setCategoryFilter}
+          options={[
+            { value: "All", label: "All Categories" },
+            ...SERVICE_CATEGORIES.map((category) => ({ value: category, label: category })),
+          ]}
+          className="md:w-48"
+        />
 
-        <select
+        <ResponsiveSelect
           value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value as "All" | ServiceStatus)}
-          className={`${inputClass(isDarkTheme)} md:w-40`}
-        >
-          <option value="All">All Status</option>
-          <option value="Published">Published</option>
-          <option value="Draft">Draft</option>
-        </select>
+          onChange={(value) => setStatusFilter(value as "All" | ServiceStatus)}
+          options={[
+            { value: "All", label: "All Status" },
+            { value: "Published", label: "Published" },
+            { value: "Draft", label: "Draft" },
+          ]}
+          className="md:w-40"
+        />
       </div>
 
       <div
@@ -416,31 +414,20 @@ export default function ServicesManager() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormField label="Icon">
-              <select
+              <ResponsiveSelect
                 value={form.icon}
-                onChange={(event) => setForm({ ...form, icon: event.target.value as ServiceIcon })}
-                className={inputClass(isDarkTheme)}
-              >
-                {SERVICE_ICONS.map((icon) => (
-                  <option key={icon} value={icon}>
-                    {icon}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setForm({ ...form, icon: value as ServiceIcon })}
+                options={SERVICE_ICONS.map((icon) => ({ value: icon, label: icon }))}
+                maxHeight={260}
+              />
             </FormField>
 
             <FormField label="Category">
-              <select
+              <ResponsiveSelect
                 value={form.category}
-                onChange={(event) => setForm({ ...form, category: event.target.value })}
-                className={inputClass(isDarkTheme)}
-              >
-                {SERVICE_CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setForm({ ...form, category: value })}
+                options={SERVICE_CATEGORIES.map((category) => ({ value: category, label: category }))}
+              />
             </FormField>
           </div>
 
@@ -474,14 +461,14 @@ export default function ServicesManager() {
           </FormField>
 
           <FormField label="Status">
-            <select
+            <ResponsiveSelect
               value={form.status}
-              onChange={(event) => setForm({ ...form, status: event.target.value as ServiceStatus })}
-              className={inputClass(isDarkTheme)}
-            >
-              <option value="Draft">Draft</option>
-              <option value="Published">Published</option>
-            </select>
+              onChange={(value) => setForm({ ...form, status: value as ServiceStatus })}
+              options={[
+                { value: "Draft", label: "Draft" },
+                { value: "Published", label: "Published" },
+              ]}
+            />
           </FormField>
 
           <div className="flex flex-wrap gap-4">

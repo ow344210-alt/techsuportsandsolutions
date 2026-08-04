@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { ImagePlus, Code } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
-import ConfirmDialog from "../components/common/ConfirmDialog";
 import {
   createProject,
   deleteProject,
+  deleteProjectImage,
   fetchAllProjects,
   swapProjectOrder,
   updateProject,
@@ -17,6 +16,10 @@ import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
+import { showConfirm } from "../lib/confirm";
+import toast from "react-hot-toast";
+import { normalizeErrorMessage } from "../lib/utils";
 const EMPTY_FORM: ProjectPayload = {
   title: "",
   description: "",
@@ -49,10 +52,9 @@ export default function ProjectsManager() {
   const [form, setForm] = useState<ProjectPayload>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [previousImageUrl, setPreviousImageUrl] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   useEffect(() => {
@@ -62,9 +64,7 @@ export default function ProjectsManager() {
       try {
         const data = await fetchAllProjects();
         if (mounted) setProjects(data);
-      } catch {
-        if (mounted) toast.error("Unable to load projects.");
-      } finally {
+      }  finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -88,29 +88,30 @@ export default function ProjectsManager() {
       status: project.status,
       is_active: project.is_active,
     });
+    setPreviousImageUrl(project.image_url);
     setIsFormOpen(true);
   }
   function closeForm() {
     setIsFormOpen(false);
     setEditingProject(null);
     setForm(EMPTY_FORM);
+    setPreviousImageUrl(null);
   }
   async function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
-      return;
-    }
-    setUploadingImage(true);
-    try {
-      const url = await uploadProjectImage(file);
-      setForm((current) => ({ ...current, image_url: url }));
-      toast.success("Image uploaded.");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unable to upload image.";
-      toast.error(message);
-    } finally {
+
+     setUploadingImage(true);
+     try {
+       const url = await uploadProjectImage(file);
+
+      if (editingProject && previousImageUrl && previousImageUrl !== url) {
+        void deleteProjectImage(previousImageUrl);
+      }
+
+       setForm((current) => ({ ...current, image_url: url }));
+       setPreviousImageUrl(null);
+      }  finally {
       setUploadingImage(false);
     }
   }
@@ -120,7 +121,6 @@ export default function ProjectsManager() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!form.title.trim() || !form.description.trim()) {
-      toast.error("Title and description are required.");
       return;
     }
     setSaving(true);
@@ -128,37 +128,39 @@ export default function ProjectsManager() {
       if (editingProject) {
         const updated = await updateProject(editingProject.id, form);
         setProjects((current) => current.map((p) => (p.id === updated.id ? updated : p)));
-        toast.success("Project updated successfully.");
+        if (previousImageUrl && previousImageUrl !== form.image_url) {
+          void deleteProjectImage(previousImageUrl);
+        }
       } else {
         const nextOrderIndex = projects.length > 0 ? Math.max(...projects.map((p) => p.order_index)) + 1 : 0;
         const created = await createProject(form, nextOrderIndex);
         setProjects((current) => [...current, created]);
-        toast.success("Project added successfully.");
       }
       closeForm();
-    } catch {
-      toast.error("Unable to save this project.");
-    } finally {
+    }  finally {
       setSaving(false);
     }
   }
   async function handleDelete(id: string) {
-    setDeleteTargetId(id);
-    setDeleteConfirmOpen(true);
-  }
-  async function confirmDelete() {
-    if (!deleteTargetId) return;
-    setDeleteConfirmOpen(false);
-    setDeletingId(deleteTargetId);
+    const result = await showConfirm({
+      title: "Delete Project",
+      text: "This will permanently delete this project.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
+    setDeletingId(id);
     try {
-      await deleteProject(deleteTargetId);
-      setProjects((current) => current.filter((p) => p.id !== deleteTargetId));
+      const project = projects.find((p) => p.id === id);
+      await deleteProject(id, project?.image_url ?? null);
+      setProjects((current) => current.filter((p) => p.id !== id));
       toast.success("Project deleted successfully.");
-    } catch {
-      toast.error("Unable to delete this project.");
+    } catch (error) {
+      toast.error(normalizeErrorMessage(error));
     } finally {
       setDeletingId(null);
-      setDeleteTargetId(null);
     }
   }
   async function handleReorder(index: number, direction: "up" | "down") {
@@ -173,24 +175,17 @@ export default function ProjectsManager() {
       reordered[index] = { ...current, order_index: target.order_index };
       reordered[targetIndex] = { ...target, order_index: current.order_index };
       reordered.sort((a, b) => a.order_index - b.order_index);
-      setProjects(reordered);
-    } catch {
-      toast.error("Unable to reorder projects.");
-    } finally {
-      setReorderingId(null);
-    }
-  }
-  async function toggleStatus(project: Project) {
-    const nextStatus: "Published" | "Draft" = project.status === "Published" ? "Draft" : "Published";
-    try {
-      const updated = await updateProject(project.id, { ...form, status: nextStatus });
-      setProjects((current) => current.map((p) => (p.id === updated.id ? updated : p)));
-      toast.success(nextStatus === "Published" ? "Project published." : "Moved to draft.");
-    } catch {
-      toast.error("Unable to update status.");
-    }
-  }
-  const filteredProjects = useMemo(() => {
+       setProjects(reordered);
+     } finally {
+       setReorderingId(null);
+     }
+   }
+   async function toggleStatus(project: Project) {
+     const nextStatus: "Published" | "Draft" = project.status === "Published" ? "Draft" : "Published";
+     const updated = await updateProject(project.id, { ...form, status: nextStatus });
+     setProjects((current) => current.map((p) => (p.id === updated.id ? updated : p)));
+   }
+   const filteredProjects = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return projects.filter((project) => {
       const matchesSearch =
@@ -206,12 +201,15 @@ export default function ProjectsManager() {
       <AdminPageHeader title="Projects" subtitle="Manage portfolio projects shown on the website." actionLabel="Add Project" onAction={openAddForm} />
       <div className={`flex flex-col gap-3 rounded-2xl border p-4 shadow-sm transition-colors duration-300 md:flex-row md:items-center ${isDarkTheme ? "border-white/10 bg-slate-900/70" : "border-slate-200 bg-white"}`}>
         <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search projects..." className={`w-full rounded-xl border px-3 py-2.5 outline-none transition md:max-w-xs ${isDarkTheme ? "border-white/10 bg-slate-950 text-white placeholder:text-slate-500 focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-500 focus:border-violet-500"}`} />
-        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={`w-full rounded-xl border px-3 py-2.5 outline-none transition md:w-48 ${isDarkTheme ? "border-white/10 bg-slate-950 text-white focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"}`}>
-          <option value="All">All Categories</option>
-          {PROJECT_CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+        <ResponsiveSelect
+          value={categoryFilter}
+          onChange={setCategoryFilter}
+          options={[
+            { value: "All", label: "All Categories" },
+            ...PROJECT_CATEGORIES.map((category) => ({ value: category, label: category })),
+          ]}
+          className="md:w-48"
+        />
       </div>
       <div className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${isDarkTheme ? "border-white/10 bg-slate-900/70" : "border-slate-200 bg-white"}`}>
         {loading ? (
@@ -255,11 +253,11 @@ export default function ProjectsManager() {
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required rows={3} className={inputClass(isDarkTheme)} />
           </FormField>
           <FormField label="Category">
-            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass(isDarkTheme)}>
-              {PROJECT_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+            <ResponsiveSelect
+              value={form.category}
+              onChange={(value) => setForm({ ...form, category: value })}
+              options={PROJECT_CATEGORIES.map((category) => ({ value: category, label: category }))}
+            />
           </FormField>
           <FormField label="Technologies (comma-separated)">
             <input type="text" value={(form.technologies || []).join(", ")} onChange={(e) => setForm({ ...form, technologies: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })} className={inputClass(isDarkTheme)} />
@@ -276,7 +274,7 @@ export default function ProjectsManager() {
               <label className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${isDarkTheme ? "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10" : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
                 <ImagePlus size={16} />
                 {uploadingImage ? "Uploading..." : form.image_url ? "Change Image" : "Upload Image"}
-                <input type="file" accept="image/*" onChange={handleImageSelect} disabled={uploadingImage} className="hidden" />
+                 <input type="file" accept=".png,.jpg,.jpeg,.webp" onChange={handleImageSelect} disabled={uploadingImage} className="hidden" />
               </label>
             </div>
             <input
@@ -289,10 +287,14 @@ export default function ProjectsManager() {
           </FormField>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormField label="Status">
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as "Published" | "Draft" })} className={inputClass(isDarkTheme)}>
-                <option value="Draft">Draft</option>
-                <option value="Published">Published</option>
-              </select>
+              <ResponsiveSelect
+                value={form.status}
+                onChange={(value) => setForm({ ...form, status: value as "Published" | "Draft" })}
+                options={[
+                  { value: "Draft", label: "Draft" },
+                  { value: "Published", label: "Published" },
+                ]}
+              />
             </FormField>
             <FormField label="Visibility">
               <label className="flex items-center gap-2 text-sm font-medium pt-2">
@@ -302,21 +304,7 @@ export default function ProjectsManager() {
             </FormField>
           </div>
         </AdminFormModal>
-      )}
-      <ConfirmDialog
-        open={deleteConfirmOpen}
-        title="Delete project"
-        description={deleteTargetId ? `Delete "${projects.find(p => p.id === deleteTargetId)?.title}"?` : undefined}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        danger
-        loading={deletingId === deleteTargetId}
-        onConfirm={confirmDelete}
-        onCancel={() => {
-          setDeleteConfirmOpen(false);
-          setDeleteTargetId(null);
-        }}
-      />
+      )      }
     </div>
   );
 }

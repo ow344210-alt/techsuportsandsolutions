@@ -1,7 +1,6 @@
 // src/dashboard/TechStackManager.tsx
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import { createTech, deleteTech, fetchTechForAdmin, swapTechOrder, updateTech } from "../lib/techStack";
 import type { TechItem, TechItemPayload } from "../lib/techStack";
@@ -10,6 +9,8 @@ import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 const EMPTY_FORM: TechItemPayload = { name: "", category: "General", is_active: true };
 export default function TechStackManager() {
   const { theme } = useTheme();
@@ -30,8 +31,8 @@ export default function TechStackManager() {
         const data = await fetchTechForAdmin();
         if (mounted) setItems(data);
       } catch {
-        if (mounted) toast.error("Unable to load tech stack.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -50,7 +51,6 @@ export default function TechStackManager() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.name.trim()) {
-      toast.error("Name is required.");
       return;
     }
     setSaving(true);
@@ -58,29 +58,35 @@ export default function TechStackManager() {
       if (editingItem) {
         const updated = await updateTech(editingItem.id, form);
         setItems((current) => current.map((i) => (i.id === updated.id ? updated : i)));
-        toast.success("Updated.");
       } else {
         const nextOrder = items.length > 0 ? Math.max(...items.map((i) => i.order_index)) + 1 : 0;
         const created = await createTech(form, nextOrder);
         setItems((current) => [...current, created]);
-        toast.success("Added.");
       }
       setIsFormOpen(false);
     } catch {
-      toast.error("Unable to save.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
   }
   async function handleDelete(id: string) {
-    if (!window.confirm("Delete this technology?")) return;
+   const result = await showConfirm({
+     title: "Delete Item",
+     text: "This will permanently delete this tech stack item.",
+     icon: "warning",
+     confirmButtonText: "Delete",
+     cancelButtonText: "Cancel",
+     variant: "danger",
+   });
+   if (!result.isConfirmed) return;
     setDeletingId(id);
     try {
       await deleteTech(id);
       setItems((current) => current.filter((i) => i.id !== id));
-      toast.success("Deleted.");
+      toast.success("Tech stack item deleted successfully.");
     } catch {
-      toast.error("Unable to delete.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -99,7 +105,7 @@ export default function TechStackManager() {
       reordered.sort((a, b) => a.order_index - b.order_index);
       setItems(reordered);
     } catch {
-      toast.error("Unable to reorder.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setReorderingId(null);
     }
@@ -109,7 +115,7 @@ export default function TechStackManager() {
       const updated = await updateTech(item.id, { name: item.name, category: item.category, is_active: !item.is_active });
       setItems((current) => current.map((i) => (i.id === updated.id ? updated : i)));
     } catch {
-      toast.error("Unable to update.");
+      toast.error("Something went wrong. Please try again.");
     }
   }
   return (

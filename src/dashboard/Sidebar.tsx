@@ -17,11 +17,14 @@ import {
   Building2,
   ImagePlus,
   MoveHorizontal,
+  Contact,
 } from "lucide-react";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
+import { showConfirm } from "../lib/confirm";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../context/ThemeContext.types";
 import logo from "../assets/logo.webp";
@@ -34,6 +37,7 @@ interface SidebarProps {
 function getNavLinkClass(isActive: boolean, isDarkTheme: boolean) {
   return `
     flex
+    min-w-0
     items-center
     gap-3
     px-4
@@ -59,28 +63,8 @@ const NAV_ITEMS = [
     icon: MessageSquare,
     end: false,
   },
-  { to: "/dashboard/services", label: "Services", icon: Layers, end: false },
-  {
-    to: "/dashboard/hero-slider",
-    label: "Hero Slider",
-    icon: Images,
-    end: false,
-  },
   { to: "/dashboard/content", label: "Content", icon: FileText, end: false },
-  { to: "/dashboard/cards", label: "Cards", icon: LayoutGrid, end: false },
-  { to: "/dashboard/faqs", label: "FAQs", icon: HelpCircle, end: false },
-  {
-    to: "/dashboard/footer-links",
-    label: "Footer Links",
-    icon: Link2,
-    end: false,
-  },
-  { to: "/dashboard/users", label: "Users", icon: User, end: false },
-  { to: "/dashboard/profile", label: "Profile", icon: UserCircle, end: false },
-  { to: "/dashboard/settings", label: "Settings", icon: Settings, end: false },
-  { to: "/dashboard/support", label: "Support", icon: LifeBuoy, end: false },
-  { to: "/dashboard/tech-stack", label: "Tech Stack", icon: Cpu, end: false },
-  { to: "/dashboard/marquee", label: "Marquee", icon: MoveHorizontal, end: false },
+  { to: "/dashboard/services", label: "Services", icon: Layers, end: false },
   {
     to: "/dashboard/projects",
     label: "Projects",
@@ -93,6 +77,32 @@ const NAV_ITEMS = [
     icon: Building2,
     end: false,
   },
+  { to: "/dashboard/tech-stack", label: "Tech Stack", icon: Cpu, end: false },
+  {
+    to: "/dashboard/hero-slider",
+    label: "Hero Slider",
+    icon: Images,
+    end: false,
+  },
+  { to: "/dashboard/marquee", label: "Marquee", icon: MoveHorizontal, end: false },
+  { to: "/dashboard/cards", label: "Cards", icon: LayoutGrid, end: false },
+  { to: "/dashboard/faqs", label: "FAQs", icon: HelpCircle, end: false },
+  {
+    to: "/dashboard/footer-links",
+    label: "Footer Links",
+    icon: Link2,
+    end: false,
+  },
+  {
+    to: "/dashboard/contact-settings",
+    label: "Contact Settings",
+    icon: Contact,
+    end: false,
+  },
+  { to: "/dashboard/users", label: "Users", icon: User, end: false },
+  { to: "/dashboard/support", label: "Support", icon: LifeBuoy, end: false },
+  { to: "/dashboard/profile", label: "Profile", icon: UserCircle, end: false },
+  { to: "/dashboard/settings", label: "Settings", icon: Settings, end: false },
 ];
 
 export default function Sidebar({
@@ -103,28 +113,79 @@ export default function Sidebar({
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const isDarkTheme = theme === "dark";
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+  const mobileDrawerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!isMobileOpen) return;
 
+    previousActiveElement.current = document.activeElement as HTMLElement;
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose?.();
+      if (event.key === "Escape") {
+        onClose?.();
+      }
     };
 
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+
+    const focusableElements = mobileDrawerRef.current?.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+
+    const firstFocusable = focusableElements?.[0];
+    const lastFocusable = focusableElements?.[focusableElements.length - 1];
+
+    const handleTabKey = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+
+      if (event.shiftKey) {
+        if (document.activeElement === firstFocusable) {
+          event.preventDefault();
+          lastFocusable?.focus();
+        }
+      } else {
+        if (document.activeElement === lastFocusable) {
+          event.preventDefault();
+          firstFocusable?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleTabKey);
+    firstFocusable?.focus();
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handleTabKey);
+      previousActiveElement.current?.focus();
+    };
   }, [isMobileOpen, onClose]);
 
   async function logout() {
-    await signOut();
-    onClose?.();
-    navigate("/login", { replace: true });
+    const result = await showConfirm({
+      title: "Sign out?",
+      text: "You will be returned to the home page.",
+      confirmButtonText: "Sign out",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await signOut();
+      onClose?.();
+      navigate("/", { replace: true });
+    } catch {
+      toast.error("Unable to sign out. Please try again.");
+    }
   }
 
   return (
     <>
       <aside
-        className={`hidden w-72 min-h-screen shrink-0 flex-col border-r p-6 shadow-sm transition-colors duration-300 lg:flex ${
+        className={`hidden h-full w-72 shrink-0 flex-col overflow-hidden border-r p-6 shadow-sm transition-colors duration-300 lg:flex ${
           isDarkTheme
             ? "border-white/10 bg-[#0B1220] text-white"
             : "border-slate-200 bg-white text-slate-900"
@@ -147,7 +208,7 @@ export default function Sidebar({
           </div>
         </div>
 
-        <nav className="mt-10 space-y-0.5 overflow-y-auto">
+        <nav className="mt-10 min-h-0 flex-1 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
@@ -160,13 +221,13 @@ export default function Sidebar({
                 }
               >
                 <Icon size={20} />
-                <span>{item.label}</span>
+                <span className="min-w-0 truncate">{item.label}</span>
               </NavLink>
             );
           })}
         </nav>
 
-        <div className="mt-auto pt-6">
+        <div className="mt-auto shrink-0 pt-6">
           <button
             type="button"
             onClick={logout}
@@ -182,29 +243,23 @@ export default function Sidebar({
         </div>
       </aside>
 
-      <div
-        aria-hidden={!isMobileOpen}
-        inert={!isMobileOpen}
-        className={`fixed inset-0 z-40 lg:hidden ${isMobileOpen ? "" : "pointer-events-none"}`}
-      >
-        <button
-          type="button"
-          aria-label="Close mobile menu"
-          onClick={onClose}
-          className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-            isMobileOpen ? "opacity-100" : "opacity-0"
-          }`}
-        />
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Mobile menu">
+          <button
+            type="button"
+            aria-label="Close mobile menu"
+            onClick={onClose}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+          />
 
-        <aside
-          className={`relative flex h-full w-72 flex-col border-r p-6 shadow-2xl transition-transform duration-300 ${
-            isMobileOpen ? "translate-x-0" : "-translate-x-full"
-          } ${
-            isDarkTheme
-              ? "border-white/10 bg-[#0B1220] text-white"
-              : "border-slate-200 bg-white text-slate-900"
-          }`}
-        >
+          <aside
+            ref={mobileDrawerRef}
+            className={`relative flex h-full w-72 flex-col overflow-hidden border-r p-6 shadow-2xl transition-transform duration-300 translate-x-0 ${
+              isDarkTheme
+                ? "border-white/10 bg-[#0B1220] text-white"
+                : "border-slate-200 bg-white text-slate-900"
+            }`}
+          >
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <img
@@ -237,7 +292,7 @@ export default function Sidebar({
               </button>
             </div>
 
-            <nav className="space-y-0.5 overflow-y-auto">
+            <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -251,13 +306,13 @@ export default function Sidebar({
                     onClick={onClose}
                   >
                     <Icon size={20} />
-                    <span>{item.label}</span>
+                    <span className="min-w-0 truncate">{item.label}</span>
                   </NavLink>
                 );
               })}
             </nav>
 
-            <div className="mt-auto pt-6">
+            <div className="mt-auto shrink-0 pt-6">
               <button
                 type="button"
                 onClick={logout}
@@ -272,7 +327,8 @@ export default function Sidebar({
               </button>
             </div>
           </aside>
-      </div>
+        </div>
+      )}
     </>
   );
 }

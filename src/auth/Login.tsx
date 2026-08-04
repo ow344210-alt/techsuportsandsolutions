@@ -1,12 +1,13 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
+import { normalizeErrorMessage } from "../lib/utils";
 import { supabase } from "../supabase/client";
 import Button from "../components/ui/Button";
 import SEO from "../components/seo/SEO";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -23,21 +24,25 @@ export default function Login() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!email || !password) {
-      toast.error("Please enter email and password.");
+    if (!email) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+    if (!password) {
+      toast.error("Please enter your password.");
       return;
     }
 
     try {
       setLoading(true);
 
-      const loadingToast = toast.loading("Signing you in...");
+      const toastId = toast.loading("Signing in...");
 
       const { error, data } = await signIn(email, password);
 
       if (error) {
-        toast.dismiss(loadingToast);
-        toast.error(error.message);
+        toast.dismiss(toastId);
+        toast.error(normalizeErrorMessage(error));
         return;
       }
 
@@ -46,8 +51,6 @@ export default function Login() {
       } else {
         localStorage.removeItem("remember-email");
       }
-
-      toast.dismiss(loadingToast);
 
       if (data.session) {
         // Look up the role directly so we redirect correctly on the
@@ -58,18 +61,18 @@ export default function Login() {
           .eq("id", data.session.user.id)
           .single();
 
+        toast.dismiss(toastId);
+        toast.success(profile?.role === "admin" ? "Welcome back, admin." : "Welcome back!");
         if (profile?.role === "admin") {
-          toast.success("Welcome back, Admin.");
-          navigate("/dashboard");
+          navigate("/dashboard", { replace: true });
         } else {
-          toast.success("Logged in successfully.");
-          navigate("/");
+          navigate("/", { replace: true });
         }
+      } else {
+        toast.dismiss(toastId);
       }
     } catch (err) {
-      console.error(err);
-
-      toast.error("Something went wrong. Please try again.");
+      toast.error(normalizeErrorMessage(err));
     } finally {
       setLoading(false);
     }

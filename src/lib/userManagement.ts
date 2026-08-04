@@ -55,10 +55,10 @@ export async function fetchAllUsers(): Promise<ManagedUser[]> {
 }
 
 export async function updateUserRole(userId: string, role: UserRole) {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role })
-    .eq("id", userId);
+  const { error } = await supabase.rpc("admin_update_user_role", {
+    p_user_id: userId,
+    p_role: role,
+  });
 
   if (error) {
     throw error;
@@ -66,10 +66,10 @@ export async function updateUserRole(userId: string, role: UserRole) {
 }
 
 export async function setUserDisabled(userId: string, isDisabled: boolean) {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ is_disabled: isDisabled })
-    .eq("id", userId);
+  const { error } = await supabase.rpc("admin_set_user_disabled", {
+    p_user_id: userId,
+    p_disabled: isDisabled,
+  });
 
   if (error) {
     throw error;

@@ -1,6 +1,5 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import { Lock, Save, X } from "lucide-react";
 
 import { supabase } from "../supabase/client";
@@ -20,35 +19,24 @@ export default function Settings() {
 
   async function handlePasswordUpdate() {
     if (!password || !confirmPassword) {
-      toast.error("Please fill all fields");
       return;
     }
 
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
       return;
     }
-
-    const loadingToast = toast.loading("Updating password...");
 
     const { error } = await supabase.auth.updateUser({
       password: password,
     });
 
     if (error) {
-      toast.dismiss(loadingToast);
-      toast.error(error.message);
       return;
     }
-
-    toast.dismiss(loadingToast);
-    toast.success("Password updated successfully");
-
     setTimeout(() => {
       navigate("/dashboard");
     }, 2000);

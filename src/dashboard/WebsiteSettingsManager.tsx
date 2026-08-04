@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Save, Trash2 } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import {
   deleteSetting,
@@ -12,7 +11,9 @@ import AdminPageHeader from "./components/AdminPageHeader";
 import AdminFormModal from "./components/AdminFormModal";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
-import ConfirmDialog from "../components/common/ConfirmDialog";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 const WEBSITE_SECTIONS = [
   "hero",
   "stats",
@@ -49,8 +50,6 @@ export default function WebsiteSettingsManager() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<WebsiteSetting | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [isAdding, setIsAdding] = useState(false);
   const [newSection, setNewSection] = useState<Section>("hero");
@@ -72,7 +71,7 @@ export default function WebsiteSettingsManager() {
       });
       setDrafts(map);
     } catch {
-      toast.error("Unable to load settings.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -92,38 +91,38 @@ export default function WebsiteSettingsManager() {
     try {
       const updated = await upsertSetting(setting.section, setting.field_key, newVal, setting.field_type);
       setSettings((current) => current.map((f) => (f.id === setting.id ? updated : f)));
-      toast.success(`"${setting.field_key}" updated.`);
       await loadSettings();
     } catch {
-      toast.error("Unable to save this field.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSavingId(null);
     }
   }
   async function handleDelete(setting: WebsiteSetting) {
-    setDeleteTarget(setting);
-    setDeleteConfirmOpen(true);
-  }
-  async function confirmDelete() {
-    if (!deleteTarget) return;
-    setDeleteConfirmOpen(false);
-    setDeletingId(deleteTarget.id);
+    const result = await showConfirm({
+      title: "Delete Setting",
+      text: "This will permanently delete this website setting.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
+    setDeletingId(setting.id);
     try {
-      await deleteSetting(deleteTarget.id);
-      setSettings((current) => current.filter((f) => f.id !== deleteTarget.id));
-      toast.success("Field deleted.");
+      await deleteSetting(setting.id);
+      setSettings((current) => current.filter((f) => f.id !== setting.id));
       await loadSettings();
+      toast.success("Website setting deleted successfully.");
     } catch {
-      toast.error("Unable to delete this field.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
-      setDeleteTarget(null);
     }
   }
   async function handleAddField(event: React.FormEvent) {
     event.preventDefault();
     if (!newKey.trim() || !newValue.trim()) {
-      toast.error("Field key and value are required.");
       return;
     }
     setAdding(true);
@@ -131,13 +130,12 @@ export default function WebsiteSettingsManager() {
       const created = await upsertSetting(newSection, newKey.trim(), newValue.trim(), newFieldType);
       setSettings((current) => [...current, created]);
       setDrafts((current) => ({ ...current, [created.id]: created.field_value }));
-      toast.success("Field added.");
       await loadSettings();
       setNewKey("");
       setNewValue("");
       setIsAdding(false);
     } catch {
-      toast.error("Unable to add this field.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setAdding(false);
     }
@@ -187,43 +185,33 @@ export default function WebsiteSettingsManager() {
           submitLabel="Add Field"
         >
           <FormField label="Section">
-            <select value={newSection} onChange={(e) => setNewSection(e.target.value as Section)} className={inputClass(isDarkTheme)}>
-              {WEBSITE_SECTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+            <ResponsiveSelect
+              value={newSection}
+              onChange={(value) => setNewSection(value as Section)}
+              options={WEBSITE_SECTIONS.map((section) => ({ value: section, label: section }))}
+            />
           </FormField>
           <FormField label="Field Key">
             <input type="text" value={newKey} onChange={(e) => setNewKey(e.target.value)} placeholder="e.g. heading, subheading, phone" required className={inputClass(isDarkTheme)} />
           </FormField>
           <FormField label="Field Type">
-            <select value={newFieldType} onChange={(e) => setNewFieldType(e.target.value)} className={inputClass(isDarkTheme)}>
-              <option value="text">Text</option>
-              <option value="textarea">Textarea</option>
-              <option value="url">URL</option>
-              <option value="number">Number</option>
-              <option value="boolean">Boolean</option>
-            </select>
+            <ResponsiveSelect
+              value={newFieldType}
+              onChange={setNewFieldType}
+              options={[
+                { value: "text", label: "Text" },
+                { value: "textarea", label: "Textarea" },
+                { value: "url", label: "URL" },
+                { value: "number", label: "Number" },
+                { value: "boolean", label: "Boolean" },
+              ]}
+            />
           </FormField>
           <FormField label="Value">
             <textarea value={newValue} onChange={(e) => setNewValue(e.target.value)} required rows={3} className={inputClass(isDarkTheme)} />
           </FormField>
         </AdminFormModal>
-      )}
-      <ConfirmDialog
-        open={deleteConfirmOpen}
-        title="Delete field"
-        description={deleteTarget ? `Delete "${deleteTarget.field_key}" from ${deleteTarget.section}?` : undefined}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        danger
-        loading={deletingId === deleteTarget?.id}
-        onConfirm={confirmDelete}
-        onCancel={() => {
-          setDeleteConfirmOpen(false);
-          setDeleteTarget(null);
-        }}
-      />
+      )      }
     </div>
   );
 }

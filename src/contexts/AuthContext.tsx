@@ -4,9 +4,8 @@ import {
 } from "react";
 
 import type { Session, User } from "@supabase/supabase-js";
-import toast from "react-hot-toast";
-
 import { supabase } from "../supabase/client";
+import toast from "react-hot-toast";
 import { AuthContext } from "./AuthContext.types";
 import type { AuthContextType, AuthProviderProps, UserRole } from "./AuthContext.types";
 
@@ -43,9 +42,9 @@ export function AuthProvider({
       return;
     }
 
-    if (data.is_disabled) {
-      toast.error("Your account has been disabled. Please contact support.");
-      await supabase.auth.signOut();
+     if (data.is_disabled) {
+       toast.error("Your account has been disabled. Please contact support.");
+       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
       setRole(null);
@@ -140,7 +139,10 @@ export function AuthProvider({
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
   }
 
   async function resetPassword(email: string) {

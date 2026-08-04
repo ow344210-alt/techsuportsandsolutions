@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import { Lock, ArrowLeft, Eye, EyeOff, KeyRound, AlertTriangle } from "lucide-react";
 
 import { supabase } from "../supabase/client";
+import { normalizeErrorMessage } from "../lib/utils";
 import Button from "../components/ui/Button";
 import SEO from "../components/seo/SEO";
+import toast from "react-hot-toast";
 
 type RecoveryStatus = "checking" | "ready" | "invalid";
 
@@ -54,6 +55,11 @@ export default function ResetPassword() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!password) {
+      toast.error("Please enter a new password.");
+      return;
+    }
+
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters.");
       return;
@@ -66,22 +72,22 @@ export default function ResetPassword() {
 
     try {
       setLoading(true);
-      const loadingToast = toast.loading("Updating password...");
+
+      const toastId = toast.loading("Updating your password...");
 
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
-        toast.dismiss(loadingToast);
-        toast.error(error.message);
+        toast.dismiss(toastId);
+        toast.error(normalizeErrorMessage(error));
         return;
       }
 
-      toast.dismiss(loadingToast);
-      toast.success("Password updated successfully. Please sign in.");
-      navigate("/login");
+      toast.dismiss(toastId);
+      toast.success("Password updated successfully.");
+      navigate("/login", { replace: true });
     } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Please try again.");
+      toast.error(normalizeErrorMessage(err));
     } finally {
       setLoading(false);
     }

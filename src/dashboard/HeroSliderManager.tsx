@@ -2,13 +2,13 @@
 // reorder, enable/disable, and upload background image/video per slide.
 import { useEffect, useState } from "react";
 import { ImagePlus } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import AdminFormModal from "./components/AdminFormModal";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
 import {
   createSlide,
   deleteSlide,
@@ -18,6 +18,8 @@ import {
   uploadSlideMedia,
 } from "../lib/heroSlides";
 import type { HeroSlide, HeroSlidePayload } from "../lib/heroSlides";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 
 const EMPTY_FORM: HeroSlidePayload = {
   title: "",
@@ -54,8 +56,8 @@ export default function HeroSliderManager() {
         const data = await fetchSlidesForAdmin();
         if (mounted) setSlides(data);
       } catch {
-        if (mounted) toast.error("Unable to load slides.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -93,17 +95,14 @@ export default function HeroSliderManager() {
     const isImage = file.type.startsWith("image/");
 
     if (!isVideo && !isImage) {
-      toast.error("Please select an image or video file.");
       return;
     }
 
     if (isVideo && file.size > 30 * 1024 * 1024) {
-      toast.error("Video must be under 30MB.");
       return;
     }
 
     if (isImage && file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB.");
       return;
     }
 
@@ -115,9 +114,8 @@ export default function HeroSliderManager() {
         media_url: url,
         media_type: isVideo ? "video" : "image",
       }));
-      toast.success("Media uploaded.");
     } catch {
-      toast.error("Unable to upload media.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setUploadingMedia(false);
     }
@@ -127,7 +125,6 @@ export default function HeroSliderManager() {
     event.preventDefault();
 
     if (!form.title.trim()) {
-      toast.error("Title is required.");
       return;
     }
 
@@ -136,32 +133,37 @@ export default function HeroSliderManager() {
       if (editingSlide) {
         const updated = await updateSlide(editingSlide.id, form);
         setSlides((current) => current.map((s) => (s.id === updated.id ? updated : s)));
-        toast.success("Slide updated.");
       } else {
         const nextOrder = slides.length > 0 ? Math.max(...slides.map((s) => s.order_index)) + 1 : 0;
         const created = await createSlide(form, nextOrder);
         setSlides((current) => [...current, created]);
-        toast.success("Slide added.");
       }
       setIsFormOpen(false);
     } catch {
-      toast.error("Unable to save this slide.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(id: string) {
-    const confirmed = window.confirm("Delete this slide?");
-    if (!confirmed) return;
+    const result = await showConfirm({
+      title: "Delete Slide",
+      text: "This will permanently delete this hero slide.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
 
     setDeletingId(id);
     try {
       await deleteSlide(id);
       setSlides((current) => current.filter((s) => s.id !== id));
-      toast.success("Slide deleted.");
+      toast.success("Hero slide deleted successfully.");
     } catch {
-      toast.error("Unable to delete this slide.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -183,7 +185,7 @@ export default function HeroSliderManager() {
       reordered.sort((a, b) => a.order_index - b.order_index);
       setSlides(reordered);
     } catch {
-      toast.error("Unable to reorder slides.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setReorderingId(null);
     }
@@ -205,7 +207,7 @@ export default function HeroSliderManager() {
       });
       setSlides((current) => current.map((s) => (s.id === updated.id ? updated : s)));
     } catch {
-      toast.error("Unable to update this slide.");
+      toast.error("Something went wrong. Please try again.");
     }
   }
 
@@ -373,14 +375,14 @@ export default function HeroSliderManager() {
           </FormField>
 
           <FormField label="Animation">
-            <select
+            <ResponsiveSelect
               value={form.animation_type}
-              onChange={(event) => setForm({ ...form, animation_type: event.target.value as "fade" | "slide" })}
-              className={inputClass(isDarkTheme)}
-            >
-              <option value="fade">Fade</option>
-              <option value="slide">Slide</option>
-            </select>
+              onChange={(value) => setForm({ ...form, animation_type: value as "fade" | "slide" })}
+              options={[
+                { value: "fade", label: "Fade" },
+                { value: "slide", label: "Slide" },
+              ]}
+            />
           </FormField>
 
           <label className="flex items-center gap-2 text-sm font-medium">

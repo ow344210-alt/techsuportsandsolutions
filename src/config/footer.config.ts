@@ -1,7 +1,7 @@
 export const FOOTER_CONTACT = {
   email: "techsupportsandsolutions@gmail.com",
-  phone: "0327-8226689",
-  address: "",
+  phone: "+92 3372579655",
+  address: "Head Quarter Karachi, Sindh, Pakistan",
 } as const;
 
 export const FOOTER_SOCIAL = [

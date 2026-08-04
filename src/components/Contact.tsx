@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+// SENTINEL_20260803113229
 import type { FormEvent } from "react";
 import {
   ArrowRight,
@@ -96,9 +97,24 @@ export default function ContactPage() {
       "Fill out the form below and our team will get back to you as soon as possible.",
     submit_btn_text: "Send Message",
     consent_text: "I agree to the privacy policy and consent to being contacted.",
-    footer_note: "Prefer email? Write to techsupportsandsolutions@gmail.com and we'll point you to the right person.",
+    footer_note: "Prefer email? Write to us and we'll point you to the right person.",
     response_time_note: "We review every message and get back to you as soon as we can.",
   });
+
+  const { content: contactInfo } = useSiteContent("contact-info", {
+    phone: "+92 3372579655",
+    email: "techsupportsandsolutions@gmail.com",
+    address: "Head Quarter Karachi, Sindh, Pakistan",
+    working_days: "Monday - Friday",
+    working_hours: "9:00 AM - 6:00 PM",
+    weekend_days: "Saturday",
+    weekend_hours: "Closed",
+    sunday_status: "Closed",
+  });
+
+  function normalizeTel(value: string) {
+    return value.replace(/[^\d+]/g, "");
+  }
 
   function handleChange(
     field: keyof typeof initialForm,
@@ -108,67 +124,66 @@ export default function ContactPage() {
     setSubmitError(null);
   }
 
-  function validateForm() {
-    if (!form.fullName.trim()) {
-      toast.error("Please enter your full name.");
-      return false;
-    }
-    if (!form.email.trim()) {
-      toast.error("Please enter your email address.");
-      return false;
-    }
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(form.email)) {
-      toast.error("Please enter a valid email address.");
-      return false;
-    }
-    if (!form.subject.trim()) {
-      toast.error("Please enter a subject.");
-      return false;
-    }
-    if (!form.message.trim() || form.message.trim().length < 10) {
-      toast.error("Please enter a message with at least 10 characters.");
-      return false;
-    }
-    if (!form.consent) {
-      toast.error("Please agree to the privacy policy before submitting.");
-      return false;
-    }
-    return true;
-  }
+   function validateForm() {
+     if (!form.fullName.trim()) {
+       toast.error("Please enter your full name.");
+       return false;
+     }
+     if (!form.email.trim()) {
+       toast.error("Please enter your email address.");
+       return false;
+     }
+     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+     if (!emailPattern.test(form.email)) {
+       toast.error("Please enter a valid email address.");
+       return false;
+     }
+     if (!form.subject.trim()) {
+       toast.error("Please enter a subject.");
+       return false;
+     }
+     if (!form.message.trim() || form.message.trim().length < 10) {
+       toast.error("Please enter a message with at least 10 characters.");
+       return false;
+     }
+     if (!form.consent) {
+       toast.error("Please agree to the privacy policy before submitting.");
+       return false;
+     }
+     return true;
+   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSubmitting) return;
     if (!validateForm()) return;
 
-    const elapsed = Date.now() - formStartTimeRef.current;
-    if (elapsed < MIN_FORM_TIME_MS) {
-      toast.error("Please wait a moment before submitting.");
-      return;
-    }
+     const elapsed = Date.now() - formStartTimeRef.current;
+     if (elapsed < MIN_FORM_TIME_MS) {
+       toast.error("Please wait a moment before submitting.");
+       return;
+     }
 
-    setIsSubmitting(true);
-    setSubmitError(null);
-    setSubmitSuccess(false);
+     setIsSubmitting(true);
+     setSubmitError(null);
+     setSubmitSuccess(false);
 
-    try {
-      await submitContactMessage({
-        fullName: form.fullName,
-        email: form.email,
-        subject: form.subject,
-        message: form.message,
-      });
-      setSubmitSuccess(true);
-      toast.success("Your message has been sent successfully.");
-      setForm(initialForm);
-      formStartTimeRef.current = Date.now();
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unable to send your message right now.";
-      setSubmitError(message);
-      toast.error(message);
-    } finally {
+     try {
+       await submitContactMessage({
+         fullName: form.fullName,
+         email: form.email,
+         subject: form.subject,
+         message: form.message,
+       });
+       setSubmitSuccess(true);
+       toast.success("Your message has been sent successfully.");
+       setForm(initialForm);
+       formStartTimeRef.current = Date.now();
+     } catch (error) {
+       const message =
+         error instanceof Error ? error.message : "Unable to send your message right now.";
+       setSubmitError(message);
+     } finally {
       setIsSubmitting(false);
     }
   }
@@ -241,7 +256,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="text-xs text-slate-400">Office hours</p>
-                <p className="text-sm font-semibold text-white">Mon–Fri, 9:00–6:00</p>
+                <p className="text-sm font-semibold text-white">{contactInfo.working_days}, {contactInfo.working_hours}</p>
               </div>
             </div>
             <div className="absolute -right-3 bottom-6 hidden items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur-md sm:flex">
@@ -251,7 +266,7 @@ export default function ContactPage() {
               <div>
                 <p className="text-xs text-slate-400">Email us</p>
                 <p className="text-sm font-semibold text-white">
-                  techsupportsandsolutions@gmail.com
+                  {contactInfo.email}
                 </p>
               </div>
             </div>
@@ -267,7 +282,7 @@ export default function ContactPage() {
       >
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <a
-            href="mailto:techsupportsandsolutions@gmail.com"
+            href={`mailto:${contactInfo.email}`}
             className="group rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-400/40 hover:shadow-xl hover:shadow-violet-950/25"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-pink-500/10 text-violet-300">
@@ -275,23 +290,23 @@ export default function ContactPage() {
             </div>
             <h3 className="mt-4 text-lg font-semibold text-white">Email Us</h3>
             <p className="mt-1 text-sm leading-6 text-slate-400">
-              techsupportsandsolutions@gmail.com
+              {contactInfo.email}
             </p>
           </a>
 
           <a
-            href="tel:03278226689"
+            href={`tel:${normalizeTel(contactInfo.phone)}`}
             className="group rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-400/40 hover:shadow-xl hover:shadow-violet-950/25"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-pink-500/10 text-violet-300">
               <Phone size={20} />
             </div>
             <h3 className="mt-4 text-lg font-semibold text-white">Call Us</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-400">0327-8226689</p>
+            <p className="mt-1 text-sm leading-6 text-slate-400">{contactInfo.phone}</p>
           </a>
 
           <a
-            href="https://www.google.com/maps/search/?api=1&query=Head+Quarter+Karachi+Sindh+Pakistan"
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contactInfo.address)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="group rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-violet-400/40 hover:shadow-xl hover:shadow-violet-950/25"
@@ -300,7 +315,7 @@ export default function ContactPage() {
               <MapPin size={20} />
             </div>
             <h3 className="mt-4 text-lg font-semibold text-white">Visit Us</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-400">Head Quarter Karachi, Sindh, Pakistan</p>
+            <p className="mt-1 text-sm leading-6 text-slate-400">{contactInfo.address}</p>
           </a>
 
           <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-900/60 p-6">
@@ -309,9 +324,9 @@ export default function ContactPage() {
             </div>
             <h3 className="mt-4 text-lg font-semibold text-white">Office Hours</h3>
             <p className="mt-1 text-sm leading-6 text-slate-400">
-              Mon–Fri, 9:00 AM–6:00 PM
+              {contactInfo.working_days}, {contactInfo.working_hours}
               <br />
-              Sat · Sun closed
+              {contactInfo.weekend_days} · {contactInfo.sunday_status}
             </p>
           </div>
         </div>

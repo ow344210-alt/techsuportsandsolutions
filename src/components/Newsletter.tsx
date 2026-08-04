@@ -1,6 +1,7 @@
 import { useState } from "react";
-import toast from "react-hot-toast";
 import { Send, Mail } from "lucide-react";
+
+import toast from "react-hot-toast";
 import { subscribeToNewsletter } from "../lib/newsletter";
 import { useSiteContent } from "../hooks/useSiteContent";
 import Section from "./ui/Section";
@@ -18,6 +19,7 @@ function Newsletter() {
     success_message: "You're subscribed! Thanks for joining.",
   });
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
 
@@ -34,9 +36,10 @@ function Newsletter() {
 
     setSubscribing(true);
     try {
-      await subscribeToNewsletter(email);
+      await subscribeToNewsletter(email, name);
       toast.success(content.success_message);
       setEmail("");
+      setName("");
     } catch (error) {
       if (error instanceof Error && error.message === "ALREADY_SUBSCRIBED") {
         toast.error("This email is already subscribed.");
@@ -77,6 +80,17 @@ function Newsletter() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
+            <input
+              type="text"
+              id="newsletter-name"
+              name="newsletter-name"
+              autoComplete="name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Your name (optional)"
+              aria-label="Name (optional)"
+              className="w-full min-w-0 rounded-xl border border-white/10 bg-[#111827] px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20 sm:w-44 sm:shrink-0"
+            />
             <input
               type="email"
               id="newsletter-email"

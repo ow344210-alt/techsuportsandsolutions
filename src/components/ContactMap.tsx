@@ -4,7 +4,7 @@ import { useSiteContent } from "../hooks/useSiteContent";
 
 function ContactMap() {
   const { content } = useSiteContent("contact-info", {
-    address: "Mashriq Centre Karachi",
+    address: "Head Quarter Karachi, Sindh, Pakistan",
   });
 
   const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(content.address)}&output=embed`;

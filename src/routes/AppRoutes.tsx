@@ -25,6 +25,9 @@ const UserManagement = lazy(() => import("../dashboard/UserManagement"));
 const Profile = lazy(() => import("../dashboard/Profile"));
 const Settings = lazy(() => import("../dashboard/Settings"));
 const ContentManager = lazy(() => import("../dashboard/ContentManager"));
+const ContactSettingsManager = lazy(
+  () => import("../dashboard/ContactSettingsManager"),
+);
 const CardsManager = lazy(() => import("../dashboard/CardsManager"));
 const FaqManager = lazy(() => import("../dashboard/FaqManager"));
 const FooterLinksManager = lazy(
@@ -180,6 +183,7 @@ export default function AppRoutes() {
           <Route path="services" element={<ServicesManager />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="content" element={<ContentManager />} />
+          <Route path="contact-settings" element={<ContactSettingsManager />} />
           <Route path="cards" element={<CardsManager />} />
           <Route path="faqs" element={<FaqManager />} />
           <Route path="tech-stack" element={<TechStackManager />} />

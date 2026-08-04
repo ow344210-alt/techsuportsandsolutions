@@ -104,13 +104,9 @@ export default function ReplyModal({
           setLoading(false);
           return;
         }
-
-        toast.success(
-          `Reply sent successfully to ${recipientEmail}.`,
-        );
-
-        setSubject("");
-        setMessage("");
+         setSubject("");
+         toast.success(`Reply sent successfully to ${recipientEmail}.`);
+         setMessage("");
         onReplySent();
         onClose();
       } catch {

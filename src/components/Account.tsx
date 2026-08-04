@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import {
   Briefcase,
   Camera,
@@ -11,8 +10,10 @@ import {
   User,
 } from "lucide-react";
 
+import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../context/ThemeContext.types";
+import { showConfirm } from "../lib/confirm";
 import { supabase } from "../supabase/client";
 import { fetchMyMessages } from "../lib/contactMessages";
 import type { ContactMessage } from "../lib/contactMessages";
@@ -90,24 +91,38 @@ export default function Account() {
         },
       });
 
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
+       if (error) {
+         toast.error(error.message);
+         return;
+       }
 
-      await refreshUser();
-      toast.success("Profile updated successfully.");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Something went wrong.";
-      toast.error(message);
+       await refreshUser();
+       toast.success("Profile updated successfully.");
+     } catch (error) {
+       const message = error instanceof Error ? error.message : "Something went wrong.";
+       toast.error(message);
     } finally {
       setSavingProfile(false);
     }
   }
 
   async function handleLogout() {
-    await signOut();
-    navigate("/", { replace: true });
+    const result = await showConfirm({
+      title: "Sign out?",
+      text: "You will be returned to the home page.",
+      confirmButtonText: "Sign out",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await signOut();
+      navigate("/", { replace: true });
+    } catch {
+      toast.error("Unable to sign out. Please try again.");
+    }
   }
 
   return (
@@ -181,10 +196,10 @@ export default function Account() {
                     const file = event.target.files?.[0];
                     if (!file) return;
 
-                    if (file.size > 2 * 1024 * 1024) {
-                      toast.error("Image must be less than 2MB.");
-                      return;
-                    }
+                     if (file.size > 2 * 1024 * 1024) {
+                       toast.error("Image must be less than 2MB.");
+                       return;
+                     }
 
                     setImage(file);
                     setPreview(URL.createObjectURL(file));

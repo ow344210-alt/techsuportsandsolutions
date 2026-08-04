@@ -1,6 +1,5 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import { User, Mail, Save, X, Camera } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
@@ -36,7 +35,6 @@ export default function Profile() {
     });
 
     if (error) {
-      console.log("UPLOAD ERROR:", error);
       throw error;
     }
 
@@ -47,7 +45,6 @@ export default function Profile() {
   async function updateProfile() {
     try {
       setLoading(true);
-      const loadingToast = toast.loading("Saving profile...");
 
       let avatarUrl = user?.user_metadata?.avatar_url;
 
@@ -67,19 +64,13 @@ export default function Profile() {
       });
 
       if (error) {
-        toast.dismiss(loadingToast);
-        toast.error(error.message);
         return;
       }
 
       await refreshUser();
-      toast.dismiss(loadingToast);
-      toast.success("Profile updated successfully");
       navigate("/dashboard");
     } catch (err: unknown) {
       console.error("PROFILE UPDATE ERROR:", err);
-      const message = err instanceof Error ? err.message : "Something went wrong";
-      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -109,7 +100,6 @@ export default function Profile() {
                   if (!file) return;
 
                   if (file.size > 2 * 1024 * 1024) {
-                    toast.error("Image must be less than 2MB");
                     return;
                   }
 

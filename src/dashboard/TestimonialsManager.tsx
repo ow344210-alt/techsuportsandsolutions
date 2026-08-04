@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Star, Plus, User } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import {
   createTestimonial,
@@ -16,7 +15,9 @@ import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
-import ConfirmDialog from "../components/common/ConfirmDialog";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 
 const EMPTY_FORM: TestimonialPayload = {
   client_name: "",
@@ -37,8 +38,6 @@ export default function TestimonialsManager() {
   const [form, setForm] = useState<TestimonialPayload>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [query, setQuery] = useState("");
@@ -50,8 +49,8 @@ export default function TestimonialsManager() {
         const data = await fetchAllTestimonials();
         if (mounted) setTestimonials(data);
       } catch {
-        if (mounted) toast.error("Unable to load testimonials.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -84,16 +83,14 @@ export default function TestimonialsManager() {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
       return;
     }
     setUploadingImage(true);
     try {
       const url = await uploadTestimonialImage(file);
       setForm((current) => ({ ...current, profile_image_url: url }));
-      toast.success("Image uploaded.");
     } catch {
-      toast.error("Unable to upload image.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setUploadingImage(false);
     }
@@ -101,7 +98,6 @@ export default function TestimonialsManager() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!form.client_name.trim() || !form.review.trim()) {
-      toast.error("Client name and review are required.");
       return;
     }
     setSaving(true);
@@ -109,37 +105,37 @@ export default function TestimonialsManager() {
       if (editingTestimonial) {
         const updated = await updateTestimonial(editingTestimonial.id, form);
         setTestimonials((current) => current.map((t) => (t.id === updated.id ? updated : t)));
-        toast.success("Testimonial updated successfully.");
       } else {
         const nextOrderIndex = testimonials.length > 0 ? Math.max(...testimonials.map((t) => t.order_index)) + 1 : 0;
         const created = await createTestimonial(form, nextOrderIndex);
         setTestimonials((current) => [...current, created]);
-        toast.success("Testimonial added successfully.");
       }
       closeForm();
     } catch {
-      toast.error("Unable to save this testimonial.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
   }
   async function handleDelete(id: string) {
-    setDeleteTargetId(id);
-    setDeleteConfirmOpen(true);
-  }
-  async function confirmDelete() {
-    if (!deleteTargetId) return;
-    setDeleteConfirmOpen(false);
-    setDeletingId(deleteTargetId);
+    const result = await showConfirm({
+      title: "Delete Testimonial",
+      text: "This will permanently delete this testimonial.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
+    setDeletingId(id);
     try {
-      await deleteTestimonial(deleteTargetId);
-      setTestimonials((current) => current.filter((t) => t.id !== deleteTargetId));
+      await deleteTestimonial(id);
+      setTestimonials((current) => current.filter((t) => t.id !== id));
       toast.success("Testimonial deleted successfully.");
     } catch {
-      toast.error("Unable to delete this testimonial.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
-      setDeleteTargetId(null);
     }
   }
   async function handleReorder(index: number, direction: "up" | "down") {
@@ -156,7 +152,7 @@ export default function TestimonialsManager() {
       reordered.sort((a, b) => a.order_index - b.order_index);
       setTestimonials(reordered);
     } catch {
-      toast.error("Unable to reorder testimonials.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setReorderingId(null);
     }
@@ -166,9 +162,8 @@ export default function TestimonialsManager() {
     try {
       const updated = await updateTestimonial(testimonial.id, { ...form, status: nextStatus });
       setTestimonials((current) => current.map((t) => (t.id === updated.id ? updated : t)));
-      toast.success(nextStatus === "Published" ? "Testimonial published." : "Moved to draft.");
     } catch {
-      toast.error("Unable to update status.");
+      toast.error("Something went wrong. Please try again.");
     }
   }
   const filteredTestimonials = useMemo(() => {
@@ -240,11 +235,14 @@ export default function TestimonialsManager() {
             <input type="text" value={form.company_name || ""} onChange={(e) => setForm({ ...form, company_name: e.target.value || null })} className={inputClass(isDarkTheme)} />
           </FormField>
           <FormField label="Rating">
-            <select value={form.rating} onChange={(e) => setForm({ ...form, rating: Number(e.target.value) })} className={inputClass(isDarkTheme)}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>{n} Star{n > 1 ? "s" : ""}</option>
-              ))}
-            </select>
+            <ResponsiveSelect
+              value={String(form.rating)}
+              onChange={(value) => setForm({ ...form, rating: Number(value) })}
+              options={[1, 2, 3, 4, 5].map((n) => ({
+                value: String(n),
+                label: `${n} Star${n > 1 ? "s" : ""}`,
+              }))}
+            />
           </FormField>
           <FormField label="Review">
             <textarea value={form.review} onChange={(e) => setForm({ ...form, review: e.target.value })} required rows={4} className={inputClass(isDarkTheme)} />
@@ -261,10 +259,14 @@ export default function TestimonialsManager() {
           </FormField>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormField label="Status">
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as "Published" | "Draft" })} className={inputClass(isDarkTheme)}>
-                <option value="Draft">Draft</option>
-                <option value="Published">Published</option>
-              </select>
+              <ResponsiveSelect
+                value={form.status}
+                onChange={(value) => setForm({ ...form, status: value as "Published" | "Draft" })}
+                options={[
+                  { value: "Draft", label: "Draft" },
+                  { value: "Published", label: "Published" },
+                ]}
+              />
             </FormField>
             <FormField label="Visibility">
               <label className="flex items-center gap-2 text-sm font-medium pt-2">
@@ -274,21 +276,7 @@ export default function TestimonialsManager() {
             </FormField>
           </div>
         </AdminFormModal>
-      )}
-      <ConfirmDialog
-        open={deleteConfirmOpen}
-        title="Delete testimonial"
-        description={deleteTargetId ? `Are you sure you want to delete this testimonial?` : undefined}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        danger
-        loading={deletingId === deleteTargetId}
-        onConfirm={confirmDelete}
-        onCancel={() => {
-          setDeleteConfirmOpen(false);
-          setDeleteTargetId(null);
-        }}
-      />
+      )      }
     </div>
   );
 }

@@ -2,15 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 
-vi.mock("react-hot-toast", () => ({
-  default: {
-    error: vi.fn(),
-    success: vi.fn(),
-    loading: vi.fn(() => "toast-id"),
-    dismiss: vi.fn(),
-  },
-}));
-
 vi.mock("../supabase/client", () => ({
   supabase: {
     auth: {

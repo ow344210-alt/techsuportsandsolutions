@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Mail, MessageCircleQuestion, Send } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import { useAuth } from "../hooks/useAuth";
 import Button from "../components/ui/Button";
@@ -13,6 +12,7 @@ import {
   submitSupportRequest,
 } from "../lib/supportRequests";
 import type { SupportRequest } from "../lib/supportRequests";
+import toast from "react-hot-toast";
 
 const FAQ_ITEMS = [
   {
@@ -74,7 +74,6 @@ export default function Support() {
     if (submitting) return;
 
     if (!form.subject.trim() || !form.message.trim()) {
-      toast.error("Please fill in both subject and message.");
       return;
     }
 
@@ -93,9 +92,8 @@ export default function Support() {
 
       setRequests((current) => [created, ...current]);
       setForm(initialForm);
-      toast.success("Your support request has been submitted.");
     } catch {
-      toast.error("Unable to submit your request. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }

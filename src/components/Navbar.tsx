@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Menu, X, ArrowRight, LogOut, UserCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import logo from "../assets/nav.webp";
 import { useAuth } from "../hooks/useAuth";
+import { showConfirm } from "../lib/confirm";
 import Button from "./ui/Button";
 import { NAV_LINKS } from "../config/nav.config";
 
@@ -29,9 +31,23 @@ function Navbar() {
   }, []);
 
   async function handleLogout() {
-    await signOut();
-    setMenuOpen(false);
-    navigate("/", { replace: true });
+    const result = await showConfirm({
+      title: "Sign out?",
+      text: "You will be returned to the home page.",
+      confirmButtonText: "Sign out",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await signOut();
+      setMenuOpen(false);
+      navigate("/", { replace: true });
+    } catch {
+      toast.error("Unable to sign out. Please try again.");
+    }
   }
 
   return (

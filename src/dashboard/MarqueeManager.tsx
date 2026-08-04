@@ -20,6 +20,8 @@ import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
+import { showConfirm } from "../lib/confirm";
 
 const EMPTY_FORM: MarqueeItemPayload = {
   label: "",
@@ -121,7 +123,15 @@ export default function MarqueeManager() {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("Delete this marquee item?")) return;
+    const result = await showConfirm({
+      title: "Delete Marquee Item",
+      text: "Are you sure you want to delete this marquee item?",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
     setDeletingId(id);
     try {
       await deleteMarqueeItem(id);
@@ -281,14 +291,14 @@ export default function MarqueeManager() {
             />
           </FormField>
           <FormField label="Row" hint="Which scrolling strip this item belongs to.">
-            <select
+            <ResponsiveSelect
               value={form.row}
-              onChange={(e) => setForm({ ...form, row: e.target.value as MarqueeRow })}
-              className={inputClass(isDarkTheme)}
-            >
-              <option value="left">Left row</option>
-              <option value="right">Right row</option>
-            </select>
+              onChange={(value) => setForm({ ...form, row: value as MarqueeRow })}
+              options={[
+                { value: "left", label: "Left row" },
+                { value: "right", label: "Right row" },
+              ]}
+            />
           </FormField>
           <label className="flex items-center gap-2 text-sm font-medium">
             <input

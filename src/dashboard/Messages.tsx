@@ -1,17 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, Mail, Search, Wifi, X } from "lucide-react";
+
 import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import { supabase } from "../supabase/client";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import ReplyModal from "../components/dashboard/ReplyModal";
 import ReplyHistory from "../components/dashboard/ReplyHistory";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
 import AdminPageHeader from "./components/AdminPageHeader";
+import TableCard from "./components/TableCard";
+import TableScroller from "./components/TableScroller";
 import {
   fetchMessageReplies,
   retryFailedReply,
 } from "../lib/contactMessageReplyService";
 import type { ContactMessageReply } from "../lib/contactMessageReplies";
+import { showConfirm } from "../lib/confirm";
 
 type MessageStatus =
   | "New"
@@ -358,13 +363,15 @@ export default function Messages() {
       return;
     }
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this message?",
-    );
-
-    if (!confirmed) {
-      return;
-    }
+    const result = await showConfirm({
+      title: "Delete Message",
+      text: "Are you sure you want to delete this message?",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
 
     setDeletingId(id);
 
@@ -556,24 +563,15 @@ export default function Messages() {
               />
             </div>
 
-            <select
+            <ResponsiveSelect
               value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as "All" | MessageStatus)
-              }
-              className={`w-full rounded-xl border px-3 py-2.5 outline-none transition sm:w-auto sm:min-w-[130px] lg:w-40 ${
-                isDarkTheme
-                  ? "border-white/10 bg-slate-950 text-white focus:border-violet-500"
-                  : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"
-              }`}
-            >
-              <option value="All">All</option>
-              {STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setStatusFilter(value as "All" | MessageStatus)}
+              options={[
+                { value: "All", label: "All" },
+                ...STATUS_OPTIONS.map((status) => ({ value: status, label: status })),
+              ]}
+              className="sm:w-auto sm:min-w-[130px] lg:w-40"
+            />
 
             <button
               type="button"
@@ -590,23 +588,17 @@ export default function Messages() {
         }
       />
 
-      <div
-        className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${
-          isDarkTheme
-            ? "border-white/10 bg-slate-900/70"
-            : "border-slate-200 bg-white"
-        }`}
-      >
-        {loading ? (
-          <div
-            className={`px-4 py-10 text-center text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}
-          >
-            Loading messages...
-          </div>
-        ) : (
-          <>
-            <div className="hidden overflow-x-auto lg:block">
-              <table className="min-w-full text-left text-sm">
+       <TableCard>
+         {loading ? (
+           <div
+             className={`px-4 py-10 text-center text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}
+           >
+             Loading messages...
+           </div>
+         ) : (
+           <>
+             <TableScroller className="hidden lg:block">
+             <table className="w-full text-left text-sm">
               <thead
                 className={
                   isDarkTheme
@@ -615,13 +607,13 @@ export default function Messages() {
                 }
               >
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Full Name</th>
-                  <th className="px-4 py-3 font-semibold">Email</th>
-                  <th className="px-4 py-3 font-semibold">Subject</th>
-                  <th className="px-4 py-3 font-semibold">Message</th>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Actions</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Full Name</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Email</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Subject</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Message</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Date</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Status</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -634,20 +626,26 @@ export default function Messages() {
                         : "border-slate-200 text-slate-700"
                     }`}
                   >
-                    <td className="max-w-[180px] truncate px-4 py-3 font-medium">
-                      {message.full_name}
+                    <td className="px-4 py-3 font-medium">
+                      <div className="max-w-[160px] truncate" title={message.full_name}>
+                        {message.full_name}
+                      </div>
                     </td>
-                    <td className="max-w-[220px] truncate px-4 py-3">
-                      {message.email}
+                    <td className="px-4 py-3">
+                      <div className="max-w-[220px] truncate" title={message.email}>
+                        {message.email}
+                      </div>
                     </td>
-                    <td className="max-w-[240px] truncate px-4 py-3">
-                      {message.subject}
+                    <td className="px-4 py-3">
+                      <div className="max-w-[240px] truncate" title={message.subject}>
+                        {message.subject}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <button
                         type="button"
                         onClick={() => openMessage(message)}
-                        className={`max-w-xs truncate text-left underline-offset-2 hover:underline ${
+                        className={`block max-w-[300px] truncate text-left underline-offset-2 hover:underline ${
                           isDarkTheme ? "text-slate-300" : "text-slate-600"
                         }`}
                         title="Click to view full message"
@@ -701,10 +699,10 @@ export default function Messages() {
                   </tr>
                 ))}
               </tbody>
-              </table>
-            </div>
+               </table>
+             </TableScroller>
 
-            <div
+             <div
               className={`divide-y lg:hidden ${isDarkTheme ? "divide-white/10" : "divide-slate-200"}`}
             >
               {filteredMessages.map((message) => (
@@ -798,7 +796,7 @@ export default function Messages() {
             No messages found.
           </div>
         )}
-      </div>
+      </TableCard>
 
       {viewingMessage && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 sm:items-center">

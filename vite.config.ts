@@ -7,8 +7,17 @@ import tailwindcss from "@tailwindcss/vite";
 // the admin dashboard) no longer bloats the customer-facing bundle.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  esbuild: {
+    // Production-only: treat console.log/debug/info as pure side-effect-free
+    // calls so esbuild drops them during minification (console.error and
+    // console.warn are intentionally kept). `pure` only affects build output;
+    // development is unaffected.
+    pure: ["console.log", "console.debug", "console.info"],
+  },
   build: {
     target: "es2020",
+    sourcemap: false,
+    minify: "esbuild",
     rollupOptions: {
       output: {
         // Use the function form so TypeScript matches the ManualChunksFunction signature

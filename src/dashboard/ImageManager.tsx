@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { ImagePlus } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
-import ConfirmDialog from "../components/common/ConfirmDialog";
 import AdminFormModal from "./components/AdminFormModal";
 import {
   createManagedImage,
@@ -16,6 +14,8 @@ import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 export default function ImageManager() {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
@@ -33,8 +33,6 @@ export default function ImageManager() {
   });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   useEffect(() => {
     let mounted = true;
@@ -44,8 +42,8 @@ export default function ImageManager() {
         const data = await fetchAllManagedImages();
         if (mounted) setImages(data);
       } catch {
-        if (mounted) toast.error("Unable to load images.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -77,16 +75,14 @@ export default function ImageManager() {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
       return;
     }
     setUploading(true);
     try {
       const url = await uploadManagedImage(file);
       setForm((current) => ({ ...current, image_url: url }));
-      toast.success("Image uploaded.");
     } catch {
-      toast.error("Unable to upload image.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -94,7 +90,6 @@ export default function ImageManager() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!form.name.trim() || !form.image_url.trim()) {
-      toast.error("Name and image URL are required.");
       return;
     }
     setSaving(true);
@@ -102,36 +97,36 @@ export default function ImageManager() {
       if (editingImage) {
         const updated = await updateManagedImage(editingImage.id, form);
         setImages((current) => current.map((img) => (img.id === updated.id ? updated : img)));
-        toast.success("Image updated.");
       } else {
         const created = await createManagedImage(form);
         setImages((current) => [created, ...current]);
-        toast.success("Image added.");
       }
       closeForm();
     } catch {
-      toast.error("Unable to save image.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
   }
   async function handleDelete(id: string) {
-    setDeleteTargetId(id);
-    setDeleteConfirmOpen(true);
-  }
-  async function confirmDelete() {
-    if (!deleteTargetId) return;
-    setDeleteConfirmOpen(false);
-    setDeletingId(deleteTargetId);
+    const result = await showConfirm({
+      title: "Delete Image",
+      text: "This will permanently delete this image.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
+    setDeletingId(id);
     try {
-      await deleteManagedImage(deleteTargetId);
-      setImages((current) => current.filter((img) => img.id !== deleteTargetId));
-      toast.success("Image deleted.");
+      await deleteManagedImage(id);
+      setImages((current) => current.filter((img) => img.id !== id));
+      toast.success("Image deleted successfully.");
     } catch {
-      toast.error("Unable to delete image.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
-      setDeleteTargetId(null);
     }
   }
   return (
@@ -198,21 +193,8 @@ export default function ImageManager() {
           </div>
         </AdminFormModal>
       )}
-      <ConfirmDialog
-        open={deleteConfirmOpen}
-        title="Delete image"
-        description={deleteTargetId ? `Delete "${images.find(i => i.id === deleteTargetId)?.name}"?` : undefined}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        danger
-        loading={deletingId === deleteTargetId}
-        onConfirm={confirmDelete}
-        onCancel={() => {
-          setDeleteConfirmOpen(false);
-          setDeleteTargetId(null);
-        }}
-      />
-    </div>
+               
+      </div>
   );
 }
 

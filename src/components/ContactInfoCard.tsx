@@ -18,15 +18,15 @@ function formatSocialHandle(url: string) {
 function ContactInfoCard() {
   const { content } = useSiteContent("contact-info", {
     email: "techsupportsandsolutions@gmail.com",
-    phone: "0327-8226689",
-    address: "Mashriq Centre Karachi",
+    phone: "+92 3372579655",
+    address: "Head Quarter Karachi, Sindh, Pakistan",
     working_days: "Monday - Friday",
     working_hours: "9:00 AM - 6:00 PM",
     weekend_days: "Saturday",
     weekend_hours: "10:00 AM - 4:00 PM",
     sunday_status: "Closed",
     emergency_note: "24/7 emergency support available for active clients",
-    emergency_phone: "0327-8226689",
+    emergency_phone: "+92 3372579655",
     response_time: "As soon as possible",
     facebook_url: "",
     instagram_url: "https://www.instagram.com/techsupportsandsolutions/",

@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, ShieldOff, UserX, UserCheck } from "lucide-react";
-import toast from "react-hot-toast";
-
 import { useTheme } from "../context/ThemeContext.types";
 import { useAuth } from "../hooks/useAuth";
 import AdminPageHeader from "./components/AdminPageHeader";
@@ -11,6 +9,8 @@ import {
   updateUserRole,
 } from "../lib/userManagement";
 import type { ManagedUser } from "../lib/userManagement";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 
 export default function UserManagement() {
   const { theme } = useTheme();
@@ -29,8 +29,8 @@ export default function UserManagement() {
         const data = await fetchAllUsers();
         if (mounted) setUsers(data);
       } catch {
-        if (mounted) toast.error("Unable to load users.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -39,15 +39,17 @@ export default function UserManagement() {
 
   async function handleRoleToggle(targetUser: ManagedUser) {
     const nextRole = targetUser.role === "admin" ? "customer" : "admin";
-    const confirmed = window.confirm(
-      nextRole === "admin"
-        ? `Make ${targetUser.email} an admin? They will get full dashboard access.`
-        : `Remove admin access from ${targetUser.email}?`
-    );
-
-    if (!confirmed) {
-      return;
-    }
+    const result = await showConfirm({
+      title: nextRole === "admin" ? "Grant Admin Role" : "Remove Admin Role",
+      text:
+        nextRole === "admin"
+          ? `Are you sure you want to make ${targetUser.email} an admin?`
+          : `Are you sure you want to remove ${targetUser.email} from the admin role?`,
+      icon: "question",
+      confirmButtonText: nextRole === "admin" ? "Make Admin" : "Remove Admin",
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
 
     setBusyId(targetUser.id);
 
@@ -56,11 +58,9 @@ export default function UserManagement() {
       setUsers((current) =>
         current.map((u) => (u.id === targetUser.id ? { ...u, role: nextRole } : u))
       );
-      toast.success(
-        nextRole === "admin" ? "User promoted to admin." : "Admin access removed."
-      );
+      toast.success("Admin role updated successfully.");
     } catch {
-      toast.error("Unable to update this user's role.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyId(null);
     }
@@ -68,15 +68,17 @@ export default function UserManagement() {
 
   async function handleDisableToggle(targetUser: ManagedUser) {
     const nextDisabled = !targetUser.is_disabled;
-    const confirmed = window.confirm(
-      nextDisabled
-        ? `Disable ${targetUser.email}? They will be logged out and unable to sign in.`
-        : `Re-enable ${targetUser.email}'s account?`
-    );
-
-    if (!confirmed) {
-      return;
-    }
+    const result = await showConfirm({
+      title: nextDisabled ? "Disable Account" : "Enable Account",
+      text: nextDisabled
+        ? `Are you sure you want to disable ${targetUser.email}?`
+        : `Are you sure you want to enable ${targetUser.email}?`,
+      icon: "warning",
+      confirmButtonText: nextDisabled ? "Disable" : "Enable",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
 
     setBusyId(targetUser.id);
 
@@ -85,9 +87,9 @@ export default function UserManagement() {
       setUsers((current) =>
         current.map((u) => (u.id === targetUser.id ? { ...u, is_disabled: nextDisabled } : u))
       );
-      toast.success(nextDisabled ? "User disabled." : "User re-enabled.");
+      toast.success(nextDisabled ? "Account disabled successfully." : "Account enabled successfully.");
     } catch {
-      toast.error("Unable to update this user's status.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyId(null);
     }

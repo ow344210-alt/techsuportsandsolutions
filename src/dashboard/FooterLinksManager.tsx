@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import {
   createFooterLink,
@@ -15,6 +14,8 @@ import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 const EMPTY_FORM: FooterLinkPayload = { label: "", url: "", is_active: true };
 export default function FooterLinksManager() {
   const { theme } = useTheme();
@@ -35,8 +36,8 @@ export default function FooterLinksManager() {
         const data = await fetchFooterLinksForAdmin();
         if (mounted) setLinks(data);
       } catch {
-        if (mounted) toast.error("Unable to load footer links.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -55,7 +56,6 @@ export default function FooterLinksManager() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.label.trim() || !form.url.trim()) {
-      toast.error("Label and URL are required.");
       return;
     }
     setSaving(true);
@@ -63,29 +63,35 @@ export default function FooterLinksManager() {
       if (editingLink) {
         const updated = await updateFooterLink(editingLink.id, form);
         setLinks((current) => current.map((l) => (l.id === updated.id ? updated : l)));
-        toast.success("Link updated.");
       } else {
         const nextOrder = links.length > 0 ? Math.max(...links.map((l) => l.order_index)) + 1 : 0;
         const created = await createFooterLink(form, nextOrder);
         setLinks((current) => [...current, created]);
-        toast.success("Link added.");
       }
       setIsFormOpen(false);
     } catch {
-      toast.error("Unable to save this link.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
   }
   async function handleDelete(id: string) {
-    if (!window.confirm("Delete this footer link?")) return;
+   const result = await showConfirm({
+     title: "Delete Link",
+     text: "This will permanently delete this footer link.",
+     icon: "warning",
+     confirmButtonText: "Delete",
+     cancelButtonText: "Cancel",
+     variant: "danger",
+   });
+   if (!result.isConfirmed) return;
     setDeletingId(id);
     try {
       await deleteFooterLink(id);
       setLinks((current) => current.filter((l) => l.id !== id));
-      toast.success("Link deleted.");
+      toast.success("Footer link deleted successfully.");
     } catch {
-      toast.error("Unable to delete this link.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -104,7 +110,7 @@ export default function FooterLinksManager() {
       reordered.sort((a, b) => a.order_index - b.order_index);
       setLinks(reordered);
     } catch {
-      toast.error("Unable to reorder links.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setReorderingId(null);
     }
@@ -114,7 +120,7 @@ export default function FooterLinksManager() {
       const updated = await updateFooterLink(link.id, { label: link.label, url: link.url, is_active: !link.is_active });
       setLinks((current) => current.map((l) => (l.id === updated.id ? updated : l)));
     } catch {
-      toast.error("Unable to update this link.");
+      toast.error("Something went wrong. Please try again.");
     }
   }
   return (

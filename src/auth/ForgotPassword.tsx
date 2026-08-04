@@ -1,11 +1,12 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import toast from "react-hot-toast";
 import { Mail, ArrowLeft, Send } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
+import { normalizeErrorMessage } from "../lib/utils";
 import Button from "../components/ui/Button";
 import SEO from "../components/seo/SEO";
+import toast from "react-hot-toast";
 
 export default function ForgotPassword() {
   const { resetPassword } = useAuth();
@@ -23,21 +24,17 @@ export default function ForgotPassword() {
 
     try {
       setLoading(true);
-      const loadingToast = toast.loading("Sending reset link...");
 
       const { error } = await resetPassword(email);
 
       if (error) {
-        toast.dismiss(loadingToast);
-        toast.error(error.message);
+        toast.error(normalizeErrorMessage(error));
         return;
       }
 
-      toast.dismiss(loadingToast);
-      toast.success("Reset email sent");
+      toast.success("Reset email sent. Check your inbox.");
     } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Please try again.");
+      toast.error(normalizeErrorMessage(err));
     } finally {
       setLoading(false);
     }

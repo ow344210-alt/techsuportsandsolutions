@@ -1,11 +1,12 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
+import { normalizeErrorMessage } from "../lib/utils";
 import Button from "../components/ui/Button";
 import SEO from "../components/seo/SEO";
+import toast from "react-hot-toast";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -22,13 +23,24 @@ export default function Register() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword) {
-      toast.error("Please fill all fields.");
+    if (!name.trim()) {
+      toast.error("Please enter your full name.");
       return;
     }
 
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match.");
+    if (!email.trim()) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    if (!password) {
+      toast.error("Please enter a password.");
       return;
     }
 
@@ -37,9 +49,20 @@ export default function Register() {
       return;
     }
 
+    if (!confirmPassword) {
+      toast.error("Please confirm your password.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
     try {
       setLoading(true);
-      const loadingToast = toast.loading("Creating your account...");
+
+      const toastId = toast.loading("Creating your account...");
 
       const { error } = await signUp(email, password, {
         data: {
@@ -48,17 +71,16 @@ export default function Register() {
       });
 
       if (error) {
-        toast.dismiss(loadingToast);
-        toast.error(error.message);
+        toast.dismiss(toastId);
+        toast.error(normalizeErrorMessage(error));
         return;
       }
 
-      toast.dismiss(loadingToast);
-      toast.success(`Welcome, ${name}! Your account is ready.`);
-      navigate("/");
+      toast.dismiss(toastId);
+      toast.success("Account created! Please check your email to verify.");
+      navigate("/", { replace: true });
     } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Try again.");
+      toast.error(normalizeErrorMessage(err));
     } finally {
       setLoading(false);
     }

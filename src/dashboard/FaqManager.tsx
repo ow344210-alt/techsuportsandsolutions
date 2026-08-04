@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import { createFaq, deleteFaq, fetchFaqsForAdmin, swapFaqOrder, updateFaq } from "../lib/faqs";
 import type { Faq, FaqPayload } from "../lib/faqs";
@@ -9,6 +8,9 @@ import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import ResponsiveSelect from "../components/ui/ResponsiveSelect";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 const PAGES = ["home", "contact-faq"];
 const EMPTY_FORM: FaqPayload = { question: "", answer: "", is_active: true };
 export default function FaqManager() {
@@ -31,8 +33,8 @@ export default function FaqManager() {
         const data = await fetchFaqsForAdmin(page);
         if (mounted) setFaqs(data);
       } catch {
-        if (mounted) toast.error("Unable to load FAQs.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -51,7 +53,6 @@ export default function FaqManager() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.question.trim() || !form.answer.trim()) {
-      toast.error("Question and answer are required.");
       return;
     }
     setSaving(true);
@@ -59,29 +60,35 @@ export default function FaqManager() {
       if (editingFaq) {
         const updated = await updateFaq(editingFaq.id, form);
         setFaqs((current) => current.map((f) => (f.id === updated.id ? updated : f)));
-        toast.success("FAQ updated.");
       } else {
         const nextOrder = faqs.length > 0 ? Math.max(...faqs.map((f) => f.order_index)) + 1 : 0;
         const created = await createFaq(page, form, nextOrder);
         setFaqs((current) => [...current, created]);
-        toast.success("FAQ added.");
       }
       setIsFormOpen(false);
     } catch {
-      toast.error("Unable to save this FAQ.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
   }
   async function handleDelete(id: string) {
-    if (!window.confirm("Delete this FAQ?")) return;
+   const result = await showConfirm({
+     title: "Delete FAQ",
+     text: "This will permanently delete this FAQ.",
+     icon: "warning",
+     confirmButtonText: "Delete",
+     cancelButtonText: "Cancel",
+     variant: "danger",
+   });
+   if (!result.isConfirmed) return;
     setDeletingId(id);
     try {
       await deleteFaq(id);
       setFaqs((current) => current.filter((f) => f.id !== id));
-      toast.success("FAQ deleted.");
+      toast.success("FAQ deleted successfully.");
     } catch {
-      toast.error("Unable to delete this FAQ.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -100,7 +107,7 @@ export default function FaqManager() {
       reordered.sort((a, b) => a.order_index - b.order_index);
       setFaqs(reordered);
     } catch {
-      toast.error("Unable to reorder FAQs.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setReorderingId(null);
     }
@@ -110,7 +117,7 @@ export default function FaqManager() {
       const updated = await updateFaq(faq.id, { question: faq.question, answer: faq.answer, is_active: !faq.is_active });
       setFaqs((current) => current.map((f) => (f.id === updated.id ? updated : f)));
     } catch {
-      toast.error("Unable to update this FAQ.");
+      toast.error("Something went wrong. Please try again.");
     }
   }
   return (
@@ -121,17 +128,12 @@ export default function FaqManager() {
         actionLabel="Add FAQ"
         onAction={openAddForm}
         extra={
-          <select
+          <ResponsiveSelect
             value={page}
-            onChange={(e) => setPage(e.target.value)}
-            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold outline-none transition ${
-              isDarkTheme ? "border-white/10 bg-slate-950 text-white focus:border-violet-500" : "border-slate-200 bg-slate-50 text-slate-900 focus:border-violet-500"
-            }`}
-          >
-            {PAGES.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
+            onChange={setPage}
+            options={PAGES.map((p) => ({ value: p, label: p }))}
+            className="w-full min-w-0 max-w-full font-semibold sm:w-auto"
+          />
         }
       />
       <div className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${isDarkTheme ? "border-white/10 bg-slate-900/70" : "border-slate-200 bg-white"}`}>

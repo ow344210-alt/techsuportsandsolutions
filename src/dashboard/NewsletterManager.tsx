@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
-import ConfirmDialog from "../components/common/ConfirmDialog";
 import { deleteNewsletterSubscriber, fetchNewsletterSubscribers } from "../lib/newsletter";
 import type { NewsletterSubscriber } from "../lib/newsletter";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 
 export default function NewsletterManager() {
   const { theme } = useTheme();
@@ -15,8 +15,6 @@ export default function NewsletterManager() {
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -26,7 +24,7 @@ export default function NewsletterManager() {
         const data = await fetchNewsletterSubscribers();
         if (mounted) setSubscribers(data);
       } catch {
-        if (mounted) toast.error("Unable to load subscribers.");
+        toast.error("Something went wrong. Please try again.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -35,23 +33,25 @@ export default function NewsletterManager() {
   }, []);
 
   async function handleDelete(id: string) {
-    setDeleteTargetId(id);
-    setDeleteConfirmOpen(true);
-  }
+    const result = await showConfirm({
+      title: "Delete Subscriber",
+      text: "This will permanently delete this newsletter subscriber.",
+      icon: "warning",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      variant: "danger",
+    });
+    if (!result.isConfirmed) return;
 
-  async function confirmDelete() {
-    if (!deleteTargetId) return;
-    setDeleteConfirmOpen(false);
-    setDeletingId(deleteTargetId);
+    setDeletingId(id);
     try {
-      await deleteNewsletterSubscriber(deleteTargetId);
-      setSubscribers((current) => current.filter((s) => s.id !== deleteTargetId));
-      toast.success("Subscriber removed.");
+      await deleteNewsletterSubscriber(id);
+      setSubscribers((current) => current.filter((s) => s.id !== id));
+      toast.success("Subscriber deleted successfully.");
     } catch {
-      toast.error("Unable to remove subscriber.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
-      setDeleteTargetId(null);
     }
   }
 
@@ -110,21 +110,6 @@ export default function NewsletterManager() {
           </ul>
         )}
       </div>
-
-      <ConfirmDialog
-        open={deleteConfirmOpen}
-        title="Remove subscriber"
-        description={deleteTargetId ? `Remove "${subscribers.find(s => s.id === deleteTargetId)?.email}"?` : undefined}
-        confirmLabel="Remove"
-        cancelLabel="Cancel"
-        danger
-        loading={deletingId === deleteTargetId}
-        onConfirm={confirmDelete}
-        onCancel={() => {
-          setDeleteConfirmOpen(false);
-          setDeleteTargetId(null);
-        }}
-      />
     </div>
   );
 }

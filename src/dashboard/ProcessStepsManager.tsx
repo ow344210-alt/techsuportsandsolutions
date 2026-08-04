@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
 import {
   createStep,
@@ -15,6 +14,8 @@ import AdminRowActions from "./components/AdminRowActions";
 import AdminFormModal from "./components/AdminFormModal";
 import { FormField } from "./components/FormField";
 import { inputClass } from "./components/FormField.utils";
+import toast from "react-hot-toast";
+import { showConfirm } from "../lib/confirm";
 const EMPTY_FORM: ProcessStepPayload = {
   title: "",
   purpose: "",
@@ -43,8 +44,8 @@ export default function ProcessStepsManager() {
         const data = await fetchStepsForAdmin();
         if (mounted) setSteps(data);
       } catch {
-        if (mounted) toast.error("Unable to load process steps.");
-      } finally {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
         if (mounted) setLoading(false);
       }
     })();
@@ -71,7 +72,6 @@ export default function ProcessStepsManager() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.title.trim()) {
-      toast.error("Title is required.");
       return;
     }
     setSaving(true);
@@ -79,29 +79,35 @@ export default function ProcessStepsManager() {
       if (editingStep) {
         const updated = await updateStep(editingStep.id, form);
         setSteps((current) => current.map((s) => (s.id === updated.id ? updated : s)));
-        toast.success("Step updated.");
       } else {
         const nextOrder = steps.length > 0 ? Math.max(...steps.map((s) => s.order_index)) + 1 : 0;
         const created = await createStep(form, nextOrder);
         setSteps((current) => [...current, created]);
-        toast.success("Step added.");
       }
       setIsFormOpen(false);
     } catch {
-      toast.error("Unable to save this step.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
   }
   async function handleDelete(id: string) {
-    if (!window.confirm("Delete this process step?")) return;
+   const result = await showConfirm({
+     title: "Delete Step",
+     text: "This will permanently delete this process step.",
+     icon: "warning",
+     confirmButtonText: "Delete",
+     cancelButtonText: "Cancel",
+     variant: "danger",
+   });
+   if (!result.isConfirmed) return;
     setDeletingId(id);
     try {
       await deleteStep(id);
       setSteps((current) => current.filter((s) => s.id !== id));
-      toast.success("Step deleted.");
+      toast.success("Process step deleted successfully.");
     } catch {
-      toast.error("Unable to delete this step.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -120,7 +126,7 @@ export default function ProcessStepsManager() {
       reordered.sort((a, b) => a.order_index - b.order_index);
       setSteps(reordered);
     } catch {
-      toast.error("Unable to reorder steps.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setReorderingId(null);
     }
@@ -138,7 +144,7 @@ export default function ProcessStepsManager() {
       });
       setSteps((current) => current.map((s) => (s.id === updated.id ? updated : s)));
     } catch {
-      toast.error("Unable to update this step.");
+      toast.error("Something went wrong. Please try again.");
     }
   }
   return (

@@ -7,8 +7,8 @@
 import { useEffect, useState } from "react";
 import logo from "../assets/tech-supports-logo.webp";
 import { Mail, Phone as PhoneIcon, MapPin, Clock, ArrowUp, Heart, Send } from "lucide-react";
-import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useSiteContent } from "../hooks/useSiteContent";
 import { useFooterLinks } from "../hooks/useFooterLinks";
@@ -63,8 +63,8 @@ function Footer() {
 
   const { content: contactInfo } = useSiteContent("contact-info", {
     email: "techsupportsandsolutions@gmail.com",
-    phone: "0327-8226689",
-    address: "Mashriq Centre Karachi",
+    phone: "+92 3372579655",
+    address: "Head Quarter Karachi, Sindh, Pakistan",
     working_days: "Monday - Friday",
     working_hours: "9:00 AM - 6:00 PM",
     weekend_days: "Saturday",
@@ -79,6 +79,7 @@ function Footer() {
   const { links: quickLinks } = useFooterLinks();
 
   const [services, setServices] = useState<Service[]>([]);
+  const [newsletterName, setNewsletterName] = useState("");
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
 
@@ -113,9 +114,10 @@ function Footer() {
 
     setSubscribing(true);
     try {
-      await subscribeToNewsletter(newsletterEmail);
+      await subscribeToNewsletter(newsletterEmail, newsletterName);
       toast.success("You're subscribed! Thanks for joining.");
       setNewsletterEmail("");
+      setNewsletterName("");
     } catch (error) {
       if (error instanceof Error && error.message === "ALREADY_SUBSCRIBED") {
         toast.error("This email is already subscribed.");
@@ -163,6 +165,17 @@ function Footer() {
             className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-md"
           >
             <input
+              type="text"
+              id="footer-newsletter-name"
+              name="footer-newsletter-name"
+              autoComplete="name"
+              value={newsletterName}
+              onChange={(event) => setNewsletterName(event.target.value)}
+              placeholder="Your name (optional)"
+              aria-label="Name (optional)"
+              className="w-full min-w-0 rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400 sm:w-40 sm:shrink-0"
+            />
+            <input
               type="email"
               id="footer-newsletter-email"
               name="footer-newsletter-email"
@@ -170,7 +183,7 @@ function Footer() {
               value={newsletterEmail}
               onChange={(event) => setNewsletterEmail(event.target.value)}
               placeholder="Enter your email"
-              className="w-full min-w-0 rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400"
+              className="w-full min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-violet-400"
             />
             <Button
               type="submit"

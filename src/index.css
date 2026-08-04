@@ -54,6 +54,7 @@ section {
 
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -729,5 +730,419 @@ section {
       padding-top: 72px !important;
       padding-bottom: 72px !important;
     }
+  }
+}
+
+/* ==========================================================
+   SWEETALERT2 — SHARED THEME
+   Every confirmation / warning modal (driven through
+   `src/lib/swal.ts`) is themed here so the dialogs feel native to
+   the site: deep navy SaaS surface, purple/electric-blue accents,
+   restrained magenta glow, subtle glass border, white primary text
+   and muted secondary text. The admin dashboard also ships a light
+   theme, so all colors are variables that swap via `html:not(.dark)`
+   vs `html.dark` instead of a hardcoded always-dark panel.
+========================================================== */
+
+.swal2-container.app-swal-container {
+  --app-swal-backdrop: rgba(2, 6, 23, 0.72);
+  --app-swal-background: rgba(11, 18, 34, 0.94);
+  --app-swal-border: rgba(168, 85, 247, 0.28);
+  --app-swal-radius: 24px;
+  --app-swal-title: #ffffff;
+  --app-swal-text: #94a3b8;
+  --app-swal-shadow:
+    0 30px 90px -18px rgba(2, 6, 23, 0.8),
+    0 0 60px -24px rgba(139, 92, 246, 0.45),
+    0 0 42px -30px rgba(236, 72, 153, 0.4);
+  --app-swal-confirm: linear-gradient(135deg, #8b5cf6 0%, #6366f1 55%, #38bdf8 120%);
+  --app-swal-confirm-hover: linear-gradient(135deg, #7c4cf3 0%, #5568f0 55%, #2fb6f8 120%);
+  --app-swal-danger: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  --app-swal-danger-hover: linear-gradient(135deg, #fb2f51 0%, #d91144 100%);
+  --app-swal-cancel-bg: rgba(148, 163, 184, 0.12);
+  --app-swal-cancel-border: rgba(148, 163, 184, 0.22);
+  --app-swal-cancel-hover: rgba(148, 163, 184, 0.2);
+  --app-swal-cancel-text: #e2e8f0;
+  --app-swal-icon-warning: #fbbf24;
+  --app-swal-icon-error: #fb7185;
+  --app-swal-icon-info: #38bdf8;
+  --app-swal-icon-question: #a78bfa;
+  --app-swal-icon-success: #34d399;
+}
+
+html:not(.dark) .swal2-container.app-swal-container {
+  --app-swal-backdrop: rgba(15, 23, 42, 0.5);
+  --app-swal-background: rgba(255, 255, 255, 0.97);
+  --app-swal-border: rgba(139, 92, 246, 0.32);
+  --app-swal-shadow:
+    0 30px 90px -18px rgba(15, 23, 42, 0.35),
+    0 0 46px -24px rgba(139, 92, 246, 0.4);
+  --app-swal-title: #0f172a;
+  --app-swal-text: #475569;
+  --app-swal-cancel-bg: rgba(15, 23, 42, 0.06);
+  --app-swal-cancel-border: rgba(15, 23, 42, 0.14);
+  --app-swal-cancel-hover: rgba(15, 23, 42, 0.12);
+  --app-swal-cancel-text: #334155;
+  --app-swal-icon-warning: #d97706;
+  --app-swal-icon-error: #e11d48;
+  --app-swal-icon-info: #0284c7;
+  --app-swal-icon-question: #7c3aed;
+  --app-swal-icon-success: #059669;
+}
+
+/* Overlay + safe container padding (modal never touches viewport edges). */
+.swal2-container.app-swal-container {
+  --swal2-backdrop: var(--app-swal-backdrop);
+  --swal2-container-padding: 1rem;
+}
+
+/* Popup surface: glass, soft border, bloom shadow, responsive width. */
+.swal2-container.app-swal-container .swal2-popup.app-swal-popup {
+  --swal2-width: min(440px, calc(100vw - 2rem));
+  --swal2-background: var(--app-swal-background);
+  --swal2-color: var(--app-swal-text);
+  --swal2-border: 1px solid var(--app-swal-border);
+  --swal2-border-radius: var(--app-swal-radius);
+  --swal2-padding: 0 0 1.5rem;
+  --swal2-title-padding: 1.5rem 1.75rem 0;
+  --swal2-html-container-padding: 1rem 1.75rem 0.4rem;
+  --swal2-actions-margin: 1.5em auto 0;
+  --swal2-confirm-button-border-radius: 12px;
+  --swal2-cancel-button-border-radius: 12px;
+  --swal2-confirm-button-color: #ffffff;
+  --swal2-confirm-button-background-color: #7c3aed;
+  --swal2-cancel-button-color: var(--app-swal-cancel-text);
+  --swal2-cancel-button-background-color: var(--app-swal-cancel-bg);
+
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--app-swal-shadow);
+}
+
+/* Titles stay white on dark, navy on light; body copy stays muted. */
+.swal2-container.app-swal-container .swal2-title.app-swal-title {
+  color: var(--app-swal-title);
+}
+
+.swal2-container.app-swal-container .swal2-html-container.app-swal-html {
+  color: var(--app-swal-text);
+  line-height: 1.55;
+  max-height: min(50vh, 320px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Action buttons: generous touch target, theme-matched variants. */
+.swal2-container.app-swal-container .swal2-styled.swal2-confirm,
+.swal2-container.app-swal-container .swal2-styled.swal2-cancel {
+  min-height: 44px;
+  padding: 0.85em 1.5em;
+  margin: 0;
+  font-weight: 700;
+}
+
+.swal2-container.app-swal-container .swal2-styled.swal2-confirm {
+  background-color: #7c3aed;
+  background-image: var(--app-swal-confirm);
+  box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.6);
+}
+
+.swal2-container.app-swal-container .swal2-styled.swal2-confirm:hover {
+  background-image: var(--app-swal-confirm-hover);
+}
+
+.swal2-container.app-swal-container .swal2-styled.swal2-confirm:active {
+  transform: translateY(1px);
+}
+
+.swal2-container.app-swal-container .swal2-styled.swal2-confirm.app-swal-confirm-danger {
+  --swal2-confirm-button-background-color: #e11d48;
+  background-color: #e11d48;
+  background-image: var(--app-swal-danger);
+  box-shadow: 0 10px 30px -10px rgba(244, 63, 94, 0.55);
+}
+
+.swal2-container.app-swal-container .swal2-styled.swal2-confirm.app-swal-confirm-danger:hover {
+  background-image: var(--app-swal-danger-hover);
+}
+
+.swal2-container.app-swal-container .swal2-styled.swal2-cancel {
+  background-color: var(--app-swal-cancel-bg);
+  border: 1px solid var(--app-swal-cancel-border);
+  box-shadow: none;
+}
+
+.swal2-container.app-swal-container .swal2-styled.swal2-cancel:hover {
+  background-color: var(--app-swal-cancel-hover);
+}
+
+.swal2-container.app-swal-container .swal2-styled:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+
+.swal2-container.app-swal-container .swal2-styled.swal2-confirm.app-swal-confirm-danger:focus-visible {
+  outline-color: #fb7185;
+}
+
+/* Buttons sit side by side with a controlled gap, and stack on phones. */
+.swal2-container.app-swal-container .swal2-actions.app-swal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.625rem;
+}
+
+/* Icons follow the brand palette instead of SweetAlert2's defaults. */
+.swal2-container.app-swal-container .swal2-icon.swal2-warning {
+  border-color: var(--app-swal-icon-warning);
+  color: var(--app-swal-icon-warning);
+}
+
+.swal2-container.app-swal-container .swal2-icon.swal2-error {
+  border-color: var(--app-swal-icon-error);
+  color: var(--app-swal-icon-error);
+}
+
+.swal2-container.app-swal-container .swal2-icon.swal2-info {
+  border-color: var(--app-swal-icon-info);
+  color: var(--app-swal-icon-info);
+}
+
+.swal2-container.app-swal-container .swal2-icon.swal2-question {
+  border-color: var(--app-swal-icon-question);
+  color: var(--app-swal-icon-question);
+}
+
+.swal2-container.app-swal-container .swal2-icon.swal2-success {
+  border-color: var(--app-swal-icon-success);
+  color: var(--app-swal-icon-success);
+}
+
+.swal2-container.app-swal-container .swal2-icon.swal2-success .swal2-success-line-tip,
+.swal2-container.app-swal-container .swal2-icon.swal2-success .swal2-success-line-long {
+  background-color: var(--app-swal-icon-success);
+}
+
+/* Close button (kept subtle for the few places that enable it). */
+.swal2-container.app-swal-container button.swal2-close {
+  color: var(--app-swal-cancel-text);
+}
+
+/* Narrow screens: full-width stacked actions and slightly smaller icon. */
+@media (max-width: 520px) {
+  .swal2-container.app-swal-container .swal2-popup.app-swal-popup {
+    --swal2-icon-zoom: 0.85;
+    --swal2-title-padding: 1.25rem 1.25rem 0;
+    --swal2-html-container-padding: 1rem 1.25rem 0.4rem;
+  }
+
+  .swal2-container.app-swal-container .swal2-actions.app-swal-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .swal2-container.app-swal-container .swal2-actions.app-swal-actions .swal2-styled {
+    width: 100%;
+  }
+}
+
+/* ==========================================================
+   SWEETALERT2 — SHARED THEME
+   Every confirmation rendered through the shared helper
+   (src/lib/confirm.ts) receives `.tss-swal` classes and is
+   styled here. Follows the app theme via the `.dark` class on
+   <html> (driven by ThemeContext), matching the dashboard cards
+   instead of the default bright-white SweetAlert2 panel.
+   These selectors out-specify the injected sweetalert2 base CSS.
+========================================================== */
+
+:root {
+  --tss-swal-bg: rgba(255, 255, 255, 0.97);
+  --tss-swal-border: rgba(15, 23, 42, 0.1);
+  --tss-swal-title: #0f172a;
+  --tss-swal-text: #475569;
+  --tss-swal-backdrop: rgba(15, 23, 42, 0.45);
+  --tss-swal-shadow:
+    0 24px 60px -20px rgba(15, 23, 42, 0.35),
+    0 0 0 1px rgba(139, 92, 246, 0.06);
+  --tss-swal-cancel-bg: #f1f5f9;
+  --tss-swal-cancel-text: #334155;
+  --tss-swal-cancel-border: rgba(15, 23, 42, 0.08);
+}
+
+.dark {
+  --tss-swal-bg: rgba(13, 18, 33, 0.92);
+  --tss-swal-border: rgba(255, 255, 255, 0.1);
+  --tss-swal-title: #f8fafc;
+  --tss-swal-text: #94a3b8;
+  --tss-swal-backdrop: rgba(2, 6, 23, 0.7);
+  --tss-swal-shadow:
+    0 30px 70px -25px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(139, 92, 246, 0.12);
+  --tss-swal-cancel-bg: rgba(255, 255, 255, 0.06);
+  --tss-swal-cancel-text: #cbd5e1;
+  --tss-swal-cancel-border: rgba(255, 255, 255, 0.12);
+}
+
+/* Modal backdrop follows the same soft dark treatment. */
+.tss-swal-container {
+  --swal2-backdrop: var(--tss-swal-backdrop);
+  --swal2-container-padding: 1rem;
+}
+
+/* Popup: navy glass card, soft border, bloom shadow, dashboard radius. */
+.tss-swal {
+  --swal2-width: min(26rem, calc(100vw - 2rem));
+  --swal2-background: var(--tss-swal-bg);
+  --swal2-color: var(--tss-swal-title);
+  --swal2-border-radius: 1rem;
+  background: var(--tss-swal-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--tss-swal-border);
+  border-radius: 1rem;
+  box-shadow: var(--tss-swal-shadow);
+  color: var(--tss-swal-title);
+}
+
+.tss-swal .tss-swal-title {
+  color: var(--tss-swal-title);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  padding: 0.5em 1.25em 0.2em;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.tss-swal .tss-swal-html {
+  color: var(--tss-swal-text);
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 0.6em 1.5em 0.4em;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-height: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Icon ring: subtle translucent halo around the type-colored icon. */
+.tss-swal .swal2-icon {
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.08);
+}
+
+.tss-swal .swal2-warning {
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.tss-swal .swal2-question {
+  border-color: #a78bfa;
+  color: #a78bfa;
+}
+
+.tss-swal .swal2-error {
+  border-color: #f87171;
+  color: #f87171;
+}
+
+.tss-swal .swal2-success {
+  border-color: #34d399;
+  color: #34d399;
+}
+
+/* Buttons are styled from scratch (`buttonsStyling: false`). */
+.tss-swal .tss-swal-confirm,
+.tss-swal .tss-swal-cancel {
+  margin: 0.3125em;
+  min-height: 44px;
+  padding: 0.625em 1.5em;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    filter 0.2s ease,
+    transform 0.1s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.tss-swal .tss-swal-confirm {
+  color: #fff;
+}
+
+.tss-swal .tss-swal-confirm:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.tss-swal .tss-swal-confirm:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.tss-swal .tss-swal-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Destructive: refined red that still sits inside the purple theme. */
+.tss-swal--danger .tss-swal-confirm {
+  background: linear-gradient(180deg, #ef4444, #dc2626);
+  box-shadow: 0 12px 28px -12px rgba(220, 38, 38, 0.7);
+}
+
+/* Non-destructive: primary purple/blue. */
+.tss-swal--default .tss-swal-confirm {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  box-shadow: 0 12px 28px -12px rgba(139, 92, 246, 0.7);
+}
+
+/* Cancel: dark/glass secondary, never red. */
+.tss-swal .tss-swal-cancel {
+  background: var(--tss-swal-cancel-bg);
+  border: 1px solid var(--tss-swal-cancel-border);
+  color: var(--tss-swal-cancel-text);
+}
+
+.tss-swal .tss-swal-cancel:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.tss-swal .tss-swal-confirm:focus-visible,
+.tss-swal .tss-swal-cancel:focus-visible {
+  outline: 3px solid rgba(139, 92, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* Close button (used by future non-blocking alerts) stays subtle. */
+.tss-swal .swal2-close {
+  color: var(--tss-swal-text);
+}
+
+/* Responsive: modal always inside the viewport, buttons stack on phones. */
+@media (max-width: 480px) {
+  .tss-swal {
+    --swal2-width: min(100%, calc(100vw - 2rem));
+  }
+
+  .tss-swal .swal2-actions {
+    flex-direction: column;
+  }
+
+  .tss-swal .tss-swal-confirm,
+  .tss-swal .tss-swal-cancel {
+    width: calc(100% - 0.625em);
+    margin: 0.3125em 0.3125em 0;
   }
 }

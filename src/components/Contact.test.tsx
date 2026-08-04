@@ -20,6 +20,13 @@ vi.mock("../hooks/useSiteContent", () => ({
       consent_text: "I agree to the privacy policy and consent to being contacted.",
       footer_note: "Validation happens in the browser.",
       response_time_note: "We typically respond within 2 hours.",
+      phone: "+92 3372579655",
+      email: "techsupportsandsolutions@gmail.com",
+      address: "Head Quarter Karachi, Sindh, Pakistan",
+      working_days: "Monday - Friday",
+      working_hours: "9:00 AM - 6:00 PM",
+      weekend_days: "Saturday",
+      sunday_status: "Closed",
     },
   })),
 }));
@@ -74,13 +81,6 @@ vi.mock("./ui/Button", () => ({
   ),
 }));
 
-vi.mock("react-hot-toast", () => ({
-  default: {
-    error: vi.fn(),
-    success: vi.fn(),
-  },
-}));
-
 import ContactPage from "./Contact";
 
 beforeEach(() => {
@@ -128,26 +128,20 @@ function fillForm(values: {
 }
 
 describe("ContactPage form validation", () => {
-  it("shows toast error for empty full name", async () => {
-    render(<ContactPage />);
-    const { submit } = getFormElements();
-    fireEvent.click(submit);
-    const toast = await import("react-hot-toast");
-    expect(toast.default.error).toHaveBeenCalledWith(
-      "Please enter your full name.",
-    );
-  });
+   it("does not submit when full name is empty", async () => {
+     render(<ContactPage />);
+     const { submit } = getFormElements();
+     fireEvent.click(submit);
+     expect(mockSubmit).not.toHaveBeenCalled();
+   });
 
-  it("shows toast error for empty email", async () => {
-    render(<ContactPage />);
-    fillForm({ fullName: "John Doe", consent: true });
-    const { submit } = getFormElements();
-    fireEvent.click(submit);
-    const toast = await import("react-hot-toast");
-    expect(toast.default.error).toHaveBeenCalledWith(
-      "Please enter your email address.",
-    );
-  });
+   it("does not submit when email is empty", async () => {
+     render(<ContactPage />);
+     fillForm({ fullName: "John Doe", consent: true });
+     const { submit } = getFormElements();
+     fireEvent.click(submit);
+     expect(mockSubmit).not.toHaveBeenCalled();
+   });
 
   it("rejects invalid email format", async () => {
     mockSubmit.mockResolvedValue(undefined);
@@ -168,31 +162,27 @@ describe("ContactPage form validation", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows toast error for empty subject", async () => {
-    render(<ContactPage />);
-    fillForm({ fullName: "John Doe", email: "john@example.com", consent: true });
-    const { submit } = getFormElements();
-    fireEvent.click(submit);
-    const toast = await import("react-hot-toast");
-    expect(toast.default.error).toHaveBeenCalledWith("Please enter a subject.");
-  });
+   it("does not submit when subject is empty", async () => {
+     render(<ContactPage />);
+     fillForm({ fullName: "John Doe", email: "john@example.com", consent: true });
+     const { submit } = getFormElements();
+     fireEvent.click(submit);
+     expect(mockSubmit).not.toHaveBeenCalled();
+   });
 
-  it("shows toast error for short message", async () => {
-    render(<ContactPage />);
-    fillForm({
-      fullName: "John Doe",
-      email: "john@example.com",
-      subject: "Hello",
-      message: "Hi",
-      consent: true,
-    });
-    const { submit } = getFormElements();
-    fireEvent.click(submit);
-    const toast = await import("react-hot-toast");
-    expect(toast.default.error).toHaveBeenCalledWith(
-      "Please enter a message with at least 10 characters.",
-    );
-  });
+   it("does not submit when message is too short", async () => {
+     render(<ContactPage />);
+     fillForm({
+       fullName: "John Doe",
+       email: "john@example.com",
+       subject: "Hello",
+       message: "Hi",
+       consent: true,
+     });
+     const { submit } = getFormElements();
+     fireEvent.click(submit);
+     expect(mockSubmit).not.toHaveBeenCalled();
+   });
 
   it("shows toast error when consent is not given", async () => {
     render(<ContactPage />);

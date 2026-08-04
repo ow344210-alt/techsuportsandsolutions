@@ -2,19 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
-  KeyRound,
-  LogOut,
-  PencilLine,
   Mail,
   CircleDot,
   BookCheck,
   ArrowRight,
-  FolderPlus,
+  Users,
+  User,
 } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../supabase/client";
-import Button from "../components/ui/Button";
+import { fetchRecentNewsletterSubscribers } from "../lib/newsletter";
+import type { NewsletterSubscriber } from "../lib/newsletter";
 import AdminPageHeader from "./components/AdminPageHeader";
 
 type RecentMessage = {
@@ -24,6 +23,10 @@ type RecentMessage = {
   subject: string;
   created_at: string;
   status: "New" | "Read";
+};
+
+type RecentSubscriber = NewsletterSubscriber & {
+  avatar_url?: string | null;
 };
 
 // The database stores lowercase workflow statuses ("new", "read", ...). Map
@@ -53,11 +56,13 @@ const statCardConfig = [
 ];
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [messageStats, setMessageStats] = useState({ total: 0, new: 0, read: 0 });
   const [recentMessages, setRecentMessages] = useState<RecentMessage[]>([]);
+  const [recentSubscribers, setRecentSubscribers] = useState<RecentSubscriber[]>([]);
   const [isLive, setIsLive] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [subscribersLoading, setSubscribersLoading] = useState(true);
   const navigate = useNavigate();
 
   const fullName = user?.user_metadata?.full_name || "Admin";
@@ -107,16 +112,28 @@ const loadMessageStats = useCallback(async () => {
     }
   }, []);
 
+  const loadRecentSubscribers = useCallback(async () => {
+    try {
+      const data = await fetchRecentNewsletterSubscribers(5);
+      setRecentSubscribers(data);
+    } catch {
+      setRecentSubscribers([]);
+    } finally {
+      setSubscribersLoading(false);
+    }
+  }, []);
+
   // Initial data load - separated from realtime subscription
   useEffect(() => {
     let mounted = true;
     async function initialLoad() {
       await loadMessageStats();
       if (mounted) await loadRecentMessages();
+      if (mounted) await loadRecentSubscribers();
     }
     initialLoad();
     return () => { mounted = false; };
-  }, [loadMessageStats, loadRecentMessages]);
+  }, [loadMessageStats, loadRecentMessages, loadRecentSubscribers]);
 
   // Realtime subscription
   useEffect(() => {
@@ -154,11 +171,6 @@ const loadMessageStats = useCallback(async () => {
     },
   ];
 
-  async function handleLogout() {
-    await signOut();
-    navigate("/login");
-  }
-
   function initialsFor(name: string) {
     return name
       .split(" ")
@@ -168,8 +180,13 @@ const loadMessageStats = useCallback(async () => {
       .join("") || "?";
   }
 
+  function subscriberDisplayName(subscriber: RecentSubscriber) {
+    const name = subscriber.name?.trim();
+    return name ? name : "Name not provided";
+  }
+
   return (
-    <div className="max-w-7xl space-y-6 overflow-hidden">
+    <div className="w-full min-w-0 max-w-7xl space-y-6">
 
       {/* Welcome Banner */}
       <AdminPageHeader
@@ -243,9 +260,9 @@ const loadMessageStats = useCallback(async () => {
         })}
       </section>
 
-      {/* Recent Messages + Quick Actions */}
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.9fr]">
-        <div className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_16px_50px_rgba(15,23,42,0.4)]">
+      {/* Recent Messages + Recent Subscribers */}
+      <section className="grid w-full min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[1.3fr_0.9fr]">
+        <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_16px_50px_rgba(15,23,42,0.4)]">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="rounded-xl bg-violet-500/15 p-2 text-violet-700 dark:text-violet-200">
@@ -317,54 +334,63 @@ const loadMessageStats = useCallback(async () => {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_16px_50px_rgba(15,23,42,0.4)]">
+        <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-[0_16px_50px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_16px_50px_rgba(15,23,42,0.4)]">
           <div className="mb-5 flex items-center gap-3">
             <div className="rounded-xl bg-violet-500/15 p-2 text-violet-700 dark:text-violet-200">
-              <PencilLine size={20} />
+              <Users size={20} />
             </div>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Quick Actions</h2>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Recent Subscribers</h2>
           </div>
 
           <div className="space-y-3">
-            <Button
-              to="/dashboard/profile"
-              fullWidth
-              size="md"
-              icon={<PencilLine size={18} />}
-            >
-              Edit Profile
-            </Button>
+            {subscribersLoading ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-950/30 dark:text-slate-300">
+                Loading recent subscribers...
+              </div>
+            ) : recentSubscribers.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-950/30 dark:text-slate-300">
+                No subscribers yet.
+              </div>
+            ) : (
+              recentSubscribers.map((subscriber) => {
+                const hasName = Boolean(subscriber.name?.trim());
+                const displayName = subscriberDisplayName(subscriber);
 
-            <Button
-              to="/dashboard/settings"
-              variant="secondary"
-              fullWidth
-              size="md"
-              icon={<KeyRound size={18} />}
-            >
-              Change Password
-            </Button>
+                return (
+                  <div
+                    key={subscriber.id}
+                    className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-violet-400/30 hover:bg-violet-500/10 dark:border-white/10 dark:bg-slate-950/30"
+                  >
+                    {subscriber.avatar_url ? (
+                      <img
+                        src={subscriber.avatar_url}
+                        alt={displayName}
+                        className="h-10 w-10 shrink-0 rounded-full object-cover"
+                      />
+                    ) : hasName ? (
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                        style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+                      >
+                        {initialsFor(displayName)}
+                      </div>
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-white/10 dark:text-slate-400"
+                      >
+                        <User size={18} />
+                      </span>
+                    )}
 
-            <Button
-              to="/dashboard/projects"
-              variant="secondary"
-              fullWidth
-              size="md"
-              icon={<FolderPlus size={18} />}
-            >
-              Manage Projects
-            </Button>
-
-            <Button
-              type="button"
-              variant="danger"
-              fullWidth
-              size="md"
-              icon={<LogOut size={18} />}
-              onClick={() => void handleLogout()}
-            >
-              Logout
-            </Button>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{displayName}</p>
+                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">{subscriber.email}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </section>

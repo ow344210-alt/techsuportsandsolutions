@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { Menu, Moon, Sun, UserCircle } from "lucide-react";
@@ -28,21 +28,31 @@ export default function DashboardLayout() {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const closeMobileMenu = useCallback(() => {
+    menuTriggerRef.current?.focus();
+    setMobileMenuOpen(false);
+  }, []);
+
+  const openMobileMenu = useCallback(() => {
+    setMobileMenuOpen(true);
+  }, []);
 
   const isDarkTheme = theme === "dark";
   const pageTitle = PAGE_TITLES[location.pathname] ?? "Dashboard";
 
   return (
     <div
-      className={`flex min-h-screen transition-colors duration-300 ${
+      className={`flex h-dvh w-full overflow-hidden transition-colors duration-300 ${
         isDarkTheme ? "bg-[#08101D] text-white" : "bg-slate-100 text-slate-900"
       }`}
     >
-      <Sidebar isMobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+      <Sidebar isMobileOpen={mobileMenuOpen} onClose={closeMobileMenu} />
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header
-          className={`h-20 border-b px-4 backdrop-blur-sm transition-colors duration-300 sm:px-6 lg:px-10 ${
+          className={`h-20 shrink-0 border-b px-4 backdrop-blur-sm transition-colors duration-300 sm:px-6 lg:px-10 ${
             isDarkTheme
               ? "border-white/10 bg-[#08101D]/90 text-white"
               : "border-slate-200 bg-white/85 text-slate-900"
@@ -51,7 +61,8 @@ export default function DashboardLayout() {
           <div className="flex h-full items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => setMobileMenuOpen(true)}
+              ref={menuTriggerRef}
+              onClick={openMobileMenu}
               className={`shrink-0 rounded-xl border p-2 transition lg:hidden ${
                 isDarkTheme
                   ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
@@ -113,8 +124,10 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className={`mx-auto w-full max-w-7xl flex-1 p-6 transition-colors duration-300 lg:p-10 ${isDarkTheme ? "bg-[#08101D]" : "bg-slate-100"}`}>
-          <Outlet />
+        <main className={`min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-colors duration-300 ${isDarkTheme ? "bg-[#08101D]" : "bg-slate-100"}`}>
+          <div className="mx-auto w-full max-w-7xl p-6 lg:p-10">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
