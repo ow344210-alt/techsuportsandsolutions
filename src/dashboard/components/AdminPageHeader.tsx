@@ -11,9 +11,10 @@ interface AdminPageHeaderProps {
   actionLabel?: string;
   onAction?: () => void;
   extra?: ReactNode;
+  badge?: ReactNode;
 }
 
-export default function AdminPageHeader({ title, subtitle, actionLabel, onAction, extra }: AdminPageHeaderProps) {
+export default function AdminPageHeader({ title, subtitle, actionLabel, onAction, extra, badge }: AdminPageHeaderProps) {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
 
@@ -24,7 +25,10 @@ export default function AdminPageHeader({ title, subtitle, actionLabel, onAction
       }`}
     >
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-bold">{title}</h1>
+          {badge ? <div className="shrink-0">{badge}</div> : null}
+        </div>
         <p className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>{subtitle}</p>
       </div>
 

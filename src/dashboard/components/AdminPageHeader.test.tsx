@@ -15,6 +15,7 @@ function renderHeader(props: {
   actionLabel?: string;
   onAction?: () => void;
   extra?: ReactNode;
+  badge?: ReactNode;
 }) {
   return render(
     <ThemeContext.Provider value={themeValue}>
@@ -57,6 +58,30 @@ describe("AdminPageHeader action button", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Add FAQ" }));
     expect(onAction).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("AdminPageHeader badge", () => {
+  it("renders the badge beside the title in a flex-wrap row, outside the description", () => {
+    renderHeader({
+      badge: <span data-testid="live-badge">Live</span>,
+      actionLabel: "Add FAQ",
+      onAction: () => {},
+    });
+
+    const title = screen.getByRole("heading", { name: "Page Title" });
+    const badge = screen.getByTestId("live-badge");
+    const description = screen.getByText("A subtitle.");
+
+    const headingRow = badge.closest("div[class*='flex']")!;
+    expect(headingRow.className).toContain("flex-wrap");
+    expect(headingRow.className).toContain("items-center");
+    expect(headingRow.className).toContain("gap-3");
+    expect(headingRow.contains(title)).toBe(true);
+    expect(badge.parentElement?.className).toContain("shrink-0");
+
+    expect(headingRow.contains(description)).toBe(false);
+    expect(title.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 

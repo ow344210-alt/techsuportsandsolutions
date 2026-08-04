@@ -532,19 +532,20 @@ export default function Messages() {
       <AdminPageHeader
         title="Contact Messages"
         subtitle="Review incoming customer requests and track their status."
+        badge={
+          <div
+            className={`flex w-fit shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold ${
+              isLive
+                ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-600"
+                : "border-slate-300/40 bg-slate-500/10 text-slate-500"
+            }`}
+          >
+            <Wifi size={12} className={isLive ? "animate-pulse" : ""} />
+            {isLive ? "Live" : "Connecting..."}
+          </div>
+        }
         extra={
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:flex-nowrap">
-            <div
-              className={`flex w-fit shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold ${
-                isLive
-                  ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-600"
-                  : "border-slate-300/40 bg-slate-500/10 text-slate-500"
-              }`}
-            >
-              <Wifi size={12} className={isLive ? "animate-pulse" : ""} />
-              {isLive ? "Live" : "Connecting..."}
-            </div>
-
             <div className="relative w-full min-w-0 sm:flex-1 sm:min-w-[220px] lg:w-[280px] lg:flex-none">
               <Search
                 size={18}
