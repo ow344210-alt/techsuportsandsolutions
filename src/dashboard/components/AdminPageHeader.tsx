@@ -23,12 +23,12 @@ export default function AdminPageHeader({ title, subtitle, actionLabel, onAction
         isDarkTheme ? "border-white/10 bg-slate-900/70 text-white" : "border-slate-200 bg-white text-slate-900"
       }`}
     >
-      <div>
+      <div className="min-w-0">
         <h1 className="text-2xl font-bold">{title}</h1>
         <p className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>{subtitle}</p>
       </div>
 
-      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+      <div className="flex min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
         {extra}
         {actionLabel && onAction && (
           <button

@@ -545,7 +545,7 @@ export default function Messages() {
               {isLive ? "Live" : "Connecting..."}
             </div>
 
-            <div className="relative w-full sm:flex-1 sm:min-w-[180px] lg:max-w-xs">
+            <div className="relative w-full min-w-0 sm:flex-1 sm:min-w-[220px] lg:w-[280px] lg:flex-none">
               <Search
                 size={18}
                 className={`absolute left-3 top-1/2 -translate-y-1/2 ${
@@ -565,20 +565,21 @@ export default function Messages() {
               />
             </div>
 
-            <ResponsiveSelect
-              value={statusFilter}
-              onChange={(value) => setStatusFilter(value as "All" | MessageStatus)}
-              options={[
-                { value: "All", label: "All" },
-                ...STATUS_OPTIONS.map((status) => ({ value: status, label: status })),
-              ]}
-              className="sm:w-auto sm:min-w-[130px] lg:w-40"
-            />
+            <div className="w-full sm:w-auto sm:min-w-[130px] lg:w-40">
+              <ResponsiveSelect
+                value={statusFilter}
+                onChange={(value) => setStatusFilter(value as "All" | MessageStatus)}
+                options={[
+                  { value: "All", label: "All" },
+                  ...STATUS_OPTIONS.map((status) => ({ value: status, label: status })),
+                ]}
+              />
+            </div>
 
             <button
               type="button"
               onClick={exportMessagesAsCsv}
-              className={`w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto ${
+              className={`flex min-h-11 w-full shrink-0 items-center justify-center whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold transition sm:w-auto sm:min-w-[120px] ${
                 isDarkTheme
                   ? "bg-violet-500 text-white hover:bg-violet-400"
                   : "bg-violet-600 text-white hover:bg-violet-500"
