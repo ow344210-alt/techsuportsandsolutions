@@ -210,20 +210,19 @@ serve(async (req: Request) => {
       .update({ recipient_email: recipientEmail })
       .eq("id", replyId);
 
-    const emailSubject = reply.subject;
     const emailProvider = "gmail";
     let providerMessageId: string | null = null;
 
     try {
       const accessToken = await getGmailAccessToken();
 
-      const mimeEmail = buildMimeEmail({
+      const mimeEmail = buildPlainTextMimeEmail({
         to: recipientEmail,
-        subject: emailSubject,
+        subject: reply.subject,
+        fallbackSubject: contactMessage.subject,
         senderEmail: gmailSenderEmail,
-        senderName: GMAIL_SENDER_NAME,
-        plainText: buildPlainTextBody(reply.message, customerName),
-        html: buildEmailBody(reply.message, customerName),
+        message: reply.message,
+        customerName,
       });
 
       const raw = toBase64Url(new TextEncoder().encode(mimeEmail));
@@ -353,40 +352,77 @@ async function getGmailAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
-interface MimeEmailParams {
+interface PlainTextMimeEmailParams {
   to: string;
   subject: string;
+  fallbackSubject: string;
   senderEmail: string;
-  senderName: string;
-  plainText: string;
-  html: string;
+  message: string;
+  customerName: string;
 }
 
-function buildMimeEmail(params: MimeEmailParams): string {
-  const boundary = "TSS" + crypto.randomUUID().replaceAll("-", "");
-
-  return [
-    `From: ${params.senderName} <${params.senderEmail}>`,
+function buildPlainTextMimeEmail(params: PlainTextMimeEmailParams): string {
+  const headers = [
+    `From: ${GMAIL_SENDER_NAME} <${params.senderEmail}>`,
+    `To: ${sanitizeHeaderValue(params.to)}`,
     `Reply-To: ${params.senderEmail}`,
-    `To: ${params.to}`,
-    `Subject: ${encodeHeaderValue(params.subject)}`,
+    `Subject: ${encodeHeaderValue(buildReplySubject(params.subject, params.fallbackSubject))}`,
     `Date: ${new Date().toUTCString()}`,
-    `Message-ID: <${crypto.randomUUID()}@techsupportandsolutions.com>`,
+    `Message-ID: <${crypto.randomUUID()}@gmail.com>`,
     "MIME-Version: 1.0",
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    "",
-    `--${boundary}`,
     "Content-Type: text/plain; charset=UTF-8",
-    "Content-Transfer-Encoding: 8bit",
-    "",
-    params.plainText,
-    `--${boundary}`,
-    "Content-Type: text/html; charset=UTF-8",
-    "Content-Transfer-Encoding: 8bit",
-    "",
-    params.html,
-    `--${boundary}--`,
+    "Content-Transfer-Encoding: quoted-printable",
   ].join("\r\n");
+
+  const body = toQuotedPrintable(
+    buildPlainTextBody(params.message, params.customerName),
+  );
+
+  return `${headers}\r\n\r\n${body}\r\n`;
+}
+
+function buildReplySubject(subject: string, fallbackSubject: string): string {
+  const stripped = stripReplyPrefixes(sanitizeHeaderValue(subject));
+  const base = stripped || sanitizeHeaderValue(fallbackSubject) || "your inquiry";
+  return `Response from Tech Supports & Solutions: ${base}`;
+}
+
+function stripReplyPrefixes(subject: string): string {
+  return subject.replace(/^(\s*(Re|Fwd)(\[\d*\])?:\s*)+/i, "");
+}
+
+const QP_MAX_LINE = 76;
+
+function toQuotedPrintable(text: string): string {
+  const encodedLines: string[] = [];
+
+  for (const rawLine of text.split("\n")) {
+    const line = rawLine.replace(/\r$/, "");
+    let current = "";
+
+    for (const byte of new TextEncoder().encode(line)) {
+      let token: string;
+
+      if (byte === 0x3d) {
+        token = "=3D";
+      } else if (byte >= 0x20 && byte <= 0x7e) {
+        token = String.fromCharCode(byte);
+      } else {
+        token = "=" + byte.toString(16).toUpperCase().padStart(2, "0");
+      }
+
+      if (current.length + token.length > QP_MAX_LINE - 1) {
+        current += "=";
+        encodedLines.push(current);
+        current = "";
+      }
+      current += token;
+    }
+
+    encodedLines.push(current);
+  }
+
+  return encodedLines.join("\r\n");
 }
 
 // Recipient and subject travel in MIME header lines. CR/LF and NUL bytes are
@@ -404,7 +440,7 @@ const MAX_HEADER_LINE = 75;
 
 function encodeHeaderValue(value: string): string {
   const safe = sanitizeHeaderValue(value);
-  if (safe.length === 0) return "Re: Your inquiry";
+  if (safe.length === 0) return "Your inquiry";
   if (/^[\x20-\x7e]*$/.test(safe)) return safe;
 
   const base64 = toBase64(new TextEncoder().encode(safe));
@@ -427,60 +463,19 @@ function isValidEmail(email: string): boolean {
 }
 
 function buildPlainTextBody(message: string, customerName: string): string {
-  const safeName = customerName.replace(/[\r\n]+/g, " ").trim();
+  const safeName = customerName.replace(/[\r\n]+/g, " ").trim() || "Customer";
 
   return [
-    `Dear ${safeName},`,
+    `Hello ${safeName},`,
+    "",
+    "Thank you for contacting Tech Supports & Solutions.",
     "",
     message.trim(),
     "",
-    "--",
-    "This is an automated reply from Tech Supports & Solutions. If you have further questions, please reply to this email or contact us through our website.",
-    "",
+    "Regards,",
     "Tech Supports & Solutions",
+    "techsupportandsolutions@gmail.com",
   ].join("\n");
-}
-
-function buildEmailBody(message: string, customerName: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reply to your inquiry</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7;">
-    <tr>
-      <td align="center" style="padding:24px 16px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-          <tr>
-            <td style="background:linear-gradient(135deg,#7c3aed,#ec4899);padding:24px 32px;">
-              <h1 style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">Tech Supports &amp; Solutions</h1>
-              <p style="margin:4px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Reply to your inquiry</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:32px;">
-              <p style="margin:0 0 16px;font-size:15px;color:#1e293b;">Dear ${escapeHtml(customerName)},</p>
-              <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;white-space:pre-wrap;">${escapeHtml(message)}</p>
-              <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;">
-              <p style="margin:0;font-size:13px;color:#94a3b8;">
-                This is an automated reply from Tech Supports &amp; Solutions. If you have further questions, please reply to this email or contact us through our website.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="background-color:#f8fafc;padding:16px 32px;border-top:1px solid #e2e8f0;">
-              <p style="margin:0;font-size:12px;color:#94a3b8;text-align:center;">&copy; ${new Date().getFullYear()} Tech Supports &amp; Solutions. All rights reserved.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
 }
 
 function toBase64(input: Uint8Array): string {
@@ -494,15 +489,4 @@ function toBase64Url(input: Uint8Array): string {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-}
-
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return text.replace(/[&<>"']/g, (ch) => map[ch]);
 }
