@@ -16,7 +16,7 @@ export function resetHistoryAndNavigate(
     settled = true;
     window.removeEventListener("popstate", onPop);
     window.clearTimeout(fallback);
-    navigate(to);
+    window.setTimeout(() => navigate(to), 0);
   }
 
   function onPop() {

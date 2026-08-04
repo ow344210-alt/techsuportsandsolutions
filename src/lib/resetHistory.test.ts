@@ -50,8 +50,26 @@ describe("resetHistoryAndNavigate", () => {
     resetHistoryAndNavigate(navigate, "/login");
 
     expect(go).toHaveBeenCalledWith(-3);
+    expect(navigate).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(0);
     expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
     vi.advanceTimersByTime(500);
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
+  });
+
+  it("defers the navigation out of the popstate handler so the browser truncates forward entries", () => {
+    vi.useFakeTimers();
+    setHistoryState(2);
+    const go = vi.fn(() => {
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    window.history.go = go;
+    const navigate = vi.fn();
+
+    resetHistoryAndNavigate(navigate, "/login");
+
+    expect(navigate).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(0);
     expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
   });
 
@@ -83,7 +101,7 @@ describe("resetHistoryAndNavigate", () => {
     expect(navigate).not.toHaveBeenCalled();
     vi.advanceTimersByTime(99);
     expect(navigate).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1);
+    vi.advanceTimersByTime(2);
     expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
   });
 });
