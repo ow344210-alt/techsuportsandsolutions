@@ -248,6 +248,8 @@ export default function ContactPage() {
                 alt="A consultant speaking with a customer about their project"
                 className="h-auto w-full rounded-3xl object-contain"
                 loading="eager"
+                decoding="async"
+                fetchPriority="high"
               />
             </div>
             <div className="absolute -left-3 top-6 hidden items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur-md sm:flex">

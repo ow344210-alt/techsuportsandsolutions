@@ -278,6 +278,7 @@ function SectionVisual({
       src={src}
       alt={alt}
       loading={eager ? "eager" : "lazy"}
+      decoding="async"
       fetchPriority={eager ? "high" : undefined}
       className={`h-auto w-full rounded-3xl object-contain ${className}`}
     />
@@ -479,6 +480,7 @@ function ServiceCard({
             src={imageUrl}
             alt={item.title}
             loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
           />
         ) : (

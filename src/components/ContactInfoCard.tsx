@@ -55,9 +55,13 @@ function ContactInfoCard() {
               Email
             </h2>
 
-            <p className="mt-1.5 break-all text-sm leading-6 text-slate-300">
+            <a
+              href={`mailto:${content.email}`}
+              className="mt-1.5 block break-all text-sm leading-6 text-slate-300 transition-colors duration-200 hover:text-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:ring-offset-2 focus:ring-offset-transparent rounded"
+              aria-label={`Send an email to ${content.email}`}
+            >
               {content.email}
-            </p>
+            </a>
           </div>
         </div>
 

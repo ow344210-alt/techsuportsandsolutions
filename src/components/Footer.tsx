@@ -205,6 +205,8 @@ function Footer() {
               <img
                 src={logo}
                 alt="Tech Supports & Solutions"
+                loading="lazy"
+                decoding="async"
                 className="mb-5 h-16 w-auto object-contain sm:h-20"
               />
             </Link>

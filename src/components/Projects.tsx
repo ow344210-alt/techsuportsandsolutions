@@ -191,6 +191,7 @@ function ProjectSectionVisual({
       src={src}
       alt={alt}
       loading={eager ? "eager" : "lazy"}
+      decoding="async"
       fetchPriority={eager ? "high" : undefined}
       className={`h-auto w-full rounded-3xl object-contain ${className}`}
     />
@@ -465,6 +466,7 @@ function ProjectCard({ project }: { project: Project }) {
             alt={project.title}
             className="aspect-[16/10] w-full bg-[#0b0f1a] object-contain transition-transform duration-700 group-hover:scale-105"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden bg-[#0b0f1a]">
@@ -474,6 +476,7 @@ function ProjectCard({ project }: { project: Project }) {
                 alt=""
                 aria-hidden="true"
                 loading="lazy"
+                decoding="async"
                 className="h-full w-full object-contain"
               />
             ) : (
@@ -598,6 +601,7 @@ function FeaturedSlide({
             src={bannerSrc}
             alt={`${project.title} preview`}
             loading={eager ? "eager" : "lazy"}
+            decoding="async"
             fetchPriority={eager ? "high" : undefined}
             className="h-auto max-h-[420px] w-full object-contain"
           />

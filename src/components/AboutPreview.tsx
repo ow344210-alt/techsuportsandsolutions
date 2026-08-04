@@ -4,7 +4,6 @@ import Section from "./ui/Section";
 import SectionIntro from "./ui/SectionIntro";
 import Button from "./ui/Button";
 import { BackgroundDecorations } from "./background";
-import founderAvif from "../assets/founder bbilal.jpg";
 import founderJpg from "../assets/founder bbilal.jpg";
 
 function AboutPreview() {
@@ -40,15 +39,13 @@ function AboutPreview() {
 
         <div data-aos="fade-right" className="lg:order-1">
           <div className="relative overflow-hidden rounded-[32px] border border-white/10">
-            <picture>
-              <source srcSet={founderAvif} type="image/avif" />
-              <img
-                src={founderJpg}
-                alt="Tech Supports & Solutions founder"
-                loading="lazy"
-                className="aspect-[4/5] w-full object-cover"
-              />
-            </picture>
+            <img
+              src={founderJpg}
+              alt="Tech Supports & Solutions founder"
+              loading="lazy"
+              decoding="async"
+              className="aspect-[4/5] w-full object-cover"
+            />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#091426]/70 via-transparent to-transparent" />
           </div>
         </div>

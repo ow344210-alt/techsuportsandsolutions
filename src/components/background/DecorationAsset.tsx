@@ -48,7 +48,8 @@ export default function DecorationAsset({
       aria-hidden="true"
       draggable={false}
       loading={eager ? "eager" : "lazy"}
-      fetchPriority={eager ? "high" : undefined}
+      decoding="async"
+      fetchPriority={eager ? "high" : "low"}
       className={`pointer-events-none select-none ${MOBILE_CLASSES[mobile]} ${MOTION_CLASSES[motion]} ${className}`}
       style={{ opacity, "--decoration-opacity": opacity } as CSSProperties}
     />

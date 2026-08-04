@@ -164,6 +164,7 @@ function VisualFrame({
       src={src}
       alt={alt}
       loading={eager ? "eager" : "lazy"}
+      decoding="async"
       fetchPriority={eager ? "high" : undefined}
       className={`h-auto w-full rounded-3xl object-contain ${className}`}
     />

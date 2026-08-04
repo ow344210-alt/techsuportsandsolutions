@@ -74,6 +74,7 @@ function Avatar({ testimonial, size = 44 }: { testimonial: Testimonial; size?: n
         width={size}
         height={size}
         loading="lazy"
+        decoding="async"
         className={`rounded-full object-cover ${ring}`}
         style={{ width: size, height: size }}
       />

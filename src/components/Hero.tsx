@@ -75,6 +75,9 @@ function Hero() {
             <img
               src={logo}
               alt="Tech Supports & Solutions"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
               className="hero-logo-float w-[min(100%,280px)] sm:w-[360px] lg:w-[480px]"
             />
           </div>

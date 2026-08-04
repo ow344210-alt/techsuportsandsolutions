@@ -67,6 +67,8 @@ function HeroSlider() {
                 alt={slide.title}
                 className="absolute inset-0 h-full w-full object-cover"
                 loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={index === 0 ? "high" : "low"}
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-slate-950 to-pink-900" />

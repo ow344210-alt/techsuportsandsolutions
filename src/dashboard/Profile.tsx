@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Mail, Save, X, Camera } from "lucide-react";
 
@@ -20,6 +20,13 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState(user?.user_metadata?.avatar_url || "");
+  const previewBlobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrlRef.current) URL.revokeObjectURL(previewBlobUrlRef.current);
+    };
+  }, []);
 
   async function uploadAvatar() {
     if (!image || !user) {
@@ -104,7 +111,10 @@ export default function Profile() {
                   }
 
                   setImage(file);
-                  setPreview(URL.createObjectURL(file));
+                  if (previewBlobUrlRef.current) URL.revokeObjectURL(previewBlobUrlRef.current);
+                  const blobUrl = URL.createObjectURL(file);
+                  previewBlobUrlRef.current = blobUrl;
+                  setPreview(blobUrl);
                 }}
               />
             </label>

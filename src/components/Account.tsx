@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Briefcase,
@@ -28,6 +28,13 @@ export default function Account() {
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState(user?.user_metadata?.avatar_url || "");
+  const previewBlobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrlRef.current) URL.revokeObjectURL(previewBlobUrlRef.current);
+    };
+  }, []);
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -202,7 +209,10 @@ export default function Account() {
                      }
 
                     setImage(file);
-                    setPreview(URL.createObjectURL(file));
+                    if (previewBlobUrlRef.current) URL.revokeObjectURL(previewBlobUrlRef.current);
+                    const blobUrl = URL.createObjectURL(file);
+                    previewBlobUrlRef.current = blobUrl;
+                    setPreview(blobUrl);
                   }}
                 />
               </label>

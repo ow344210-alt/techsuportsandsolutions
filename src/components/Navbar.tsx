@@ -67,6 +67,9 @@ function Navbar() {
           <img
             src={logo}
             alt="Tech Supports & Solutions"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="h-14 w-auto object-contain transition duration-300 hover:scale-105"
           />
 

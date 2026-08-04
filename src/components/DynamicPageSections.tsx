@@ -39,6 +39,8 @@ export default function DynamicPageSections({ page }: DynamicPageSectionsProps) 
                     <img
                       src={card.image_url}
                       alt={card.title}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                   </div>
