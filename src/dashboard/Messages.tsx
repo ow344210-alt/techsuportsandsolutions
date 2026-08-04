@@ -579,7 +579,7 @@ export default function Messages() {
             <button
               type="button"
               onClick={exportMessagesAsCsv}
-              className={`flex min-h-11 w-full shrink-0 items-center justify-center whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold transition sm:w-auto sm:min-w-[120px] ${
+              className={`inline-flex min-h-11 w-full shrink-0 items-center justify-center whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold transition sm:w-auto sm:min-w-[120px] ${
                 isDarkTheme
                   ? "bg-violet-500 text-white hover:bg-violet-400"
                   : "bg-violet-600 text-white hover:bg-violet-500"

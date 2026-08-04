@@ -88,6 +88,22 @@ describe("Messages toolbar", () => {
     expect(screen.getByRole("button", { name: "Export CSV" })).toBeInTheDocument();
   });
 
+  it("renders Export CSV as a no-wrap horizontal button", async () => {
+    renderMessages();
+    await screen.findAllByText("alice@test.com");
+
+    const button = screen.getByRole("button", { name: "Export CSV" });
+    expect(button.className).toContain("shrink-0");
+    expect(button.className).toContain("whitespace-nowrap");
+    expect(button.className).toContain("min-h-11");
+    expect(button.className).toContain("inline-flex");
+    expect(button.className).toContain("items-center");
+    expect(button.className).toContain("w-full");
+    expect(button.className).toContain("sm:w-auto");
+    expect(button.className).toContain("sm:min-w-[120px]");
+    expect(button.className).not.toMatch(/(^|\s)w-\[|(^|\s)max-w-\[/);
+  });
+
   it("shows an error toast when exporting with no messages", async () => {
     mockMessages = [];
     renderMessages();

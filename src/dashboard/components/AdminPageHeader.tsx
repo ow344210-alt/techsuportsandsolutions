@@ -28,17 +28,17 @@ export default function AdminPageHeader({ title, subtitle, actionLabel, onAction
         <p className={`mt-1 text-sm ${isDarkTheme ? "text-slate-400" : "text-slate-600"}`}>{subtitle}</p>
       </div>
 
-      <div className="flex min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+      <div className="flex min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
         {extra}
         {actionLabel && onAction && (
           <button
             type="button"
             onClick={onAction}
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto ${
+            className={`inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 text-sm font-semibold transition sm:w-auto sm:min-w-[120px] ${
               isDarkTheme ? "bg-violet-500 text-white hover:bg-violet-400" : "bg-violet-600 text-white hover:bg-violet-500"
             }`}
           >
-            <Plus size={18} />
+            <Plus size={18} className="shrink-0" />
             {actionLabel}
           </button>
         )}

@@ -74,6 +74,35 @@ describe("FaqManager page selector", () => {
   });
 });
 
+describe("FaqManager action button", () => {
+  it("renders Add FAQ as a no-wrap horizontal button", async () => {
+    renderManager();
+
+    await screen.findByText("What services do you offer?");
+
+    const button = screen.getByRole("button", { name: "Add FAQ" });
+    expect(button.className).toContain("whitespace-nowrap");
+    expect(button.className).toContain("shrink-0");
+    expect(button.className).toContain("min-h-11");
+    expect(button.className).toContain("inline-flex");
+    expect(button.className).toContain("items-center");
+    expect(button.className).toContain("justify-center");
+    expect(button.className).toContain("w-full");
+    expect(button.className).toContain("sm:w-auto");
+    expect(button.className).toContain("sm:min-w-[120px]");
+    expect(button.className).not.toMatch(/(^|\s)w-\[|(^|\s)max-w-\[/);
+  });
+
+  it("opens the Add FAQ modal when clicked", async () => {
+    renderManager();
+
+    await screen.findByText("What services do you offer?");
+    fireEvent.click(screen.getByRole("button", { name: "Add FAQ" }));
+
+    expect(await screen.findByText("Question")).toBeInTheDocument();
+  });
+});
+
 describe("FaqManager delete confirmation", () => {
   it("deletes the FAQ and shows a success toast when confirmed", async () => {
     swalFire.mockResolvedValue({ isConfirmed: true });

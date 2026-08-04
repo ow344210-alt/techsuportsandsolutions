@@ -160,15 +160,17 @@ export default function CardsManager() {
         actionLabel="New Section"
         onAction={openAddGroup}
         extra={
-          <ResponsiveSelect
-            value={page}
-            onChange={setPage}
-            options={PAGES.map((p) => ({
-              value: p,
-              label: `${p.charAt(0).toUpperCase() + p.slice(1)} page`,
-            }))}
-            className="w-full min-w-0 max-w-full font-semibold sm:w-auto"
-          />
+          <div className="w-full sm:w-auto sm:min-w-[160px]">
+            <ResponsiveSelect
+              value={page}
+              onChange={setPage}
+              options={PAGES.map((p) => ({
+                value: p,
+                label: `${p.charAt(0).toUpperCase() + p.slice(1)} page`,
+              }))}
+              className="w-full min-w-0 max-w-full font-semibold sm:w-auto"
+            />
+          </div>
         }
       />
 

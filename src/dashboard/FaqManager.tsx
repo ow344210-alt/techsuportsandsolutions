@@ -128,12 +128,14 @@ export default function FaqManager() {
         actionLabel="Add FAQ"
         onAction={openAddForm}
         extra={
-          <ResponsiveSelect
-            value={page}
-            onChange={setPage}
-            options={PAGES.map((p) => ({ value: p, label: p }))}
-            className="w-full min-w-0 max-w-full font-semibold sm:w-auto"
-          />
+          <div className="w-full sm:w-auto sm:min-w-[160px]">
+            <ResponsiveSelect
+              value={page}
+              onChange={setPage}
+              options={PAGES.map((p) => ({ value: p, label: p }))}
+              className="w-full min-w-0 max-w-full font-semibold sm:w-auto"
+            />
+          </div>
         }
       />
       <div className={`overflow-hidden rounded-2xl border shadow-sm transition-colors duration-300 ${isDarkTheme ? "border-white/10 bg-slate-900/70" : "border-slate-200 bg-white"}`}>
