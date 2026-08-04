@@ -22,16 +22,19 @@ export default function StickyTableScrollbar({
   const draggingRef = useRef(false);
 
   useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) {
-      return;
-    }
-
     let frame = 0;
+    let attached = false;
+    let attachedScroller: HTMLElement | null = null;
+    let scrollerObserver: ResizeObserver | null = null;
 
     const update = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
+        const scroller = scrollerRef.current;
+        if (!scroller) {
+          return;
+        }
+
         const hasOverflow = scroller.scrollWidth > scroller.clientWidth + 1;
         const rect = scroller.getBoundingClientRect();
         const viewportBottom = window.innerHeight;
@@ -50,22 +53,42 @@ export default function StickyTableScrollbar({
       });
     };
 
-    const resizeObserver = new ResizeObserver(update);
-    resizeObserver.observe(scroller);
-    if (scroller.firstElementChild) {
-      resizeObserver.observe(scroller.firstElementChild);
-    }
+    // The table scroller only mounts after messages finish loading, so it can
+    // be absent when this effect first runs. Re-check on every document size
+    // change and attach the scroller observers the moment it appears.
+    const attachScrollerObservers = () => {
+      const scroller = scrollerRef.current;
+      if (!scroller || attached) {
+        return;
+      }
+      attached = true;
+      attachedScroller = scroller;
+      scrollerObserver = new ResizeObserver(update);
+      scrollerObserver.observe(scroller);
+      if (scroller.firstElementChild) {
+        scrollerObserver.observe(scroller.firstElementChild);
+      }
+      scroller.addEventListener("scroll", update);
+      update();
+    };
 
-    scroller.addEventListener("scroll", update);
+    const bodyObserver = new ResizeObserver(() => {
+      attachScrollerObservers();
+      update();
+    });
+    bodyObserver.observe(document.body);
+
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
 
+    attachScrollerObservers();
     update();
 
     return () => {
       cancelAnimationFrame(frame);
-      resizeObserver.disconnect();
-      scroller.removeEventListener("scroll", update);
+      bodyObserver.disconnect();
+      scrollerObserver?.disconnect();
+      attachedScroller?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };

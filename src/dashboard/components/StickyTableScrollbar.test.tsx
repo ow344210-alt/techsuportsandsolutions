@@ -64,6 +64,47 @@ beforeEach(() => {
     ResizeObserverStub;
 });
 
+describe("StickyTableScrollbar late mount", () => {
+  it("initializes when the scroller mounts after the component (async table load)", async () => {
+    const callbacks: Array<() => void> = [];
+    class CapturingResizeObserver {
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+      constructor(callback: () => void) {
+        callbacks.push(callback);
+      }
+    }
+    (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver =
+      CapturingResizeObserver;
+
+    const scrollerRef = createRef<HTMLDivElement>();
+    render(
+      <StickyTableScrollbar
+        scrollerRef={scrollerRef as RefObject<HTMLDivElement | null>}
+      />,
+    );
+
+    const bar = screen.getByTestId("sticky-scrollbar");
+    expect(bar.style.display).toBe("none");
+
+    const scroller = document.createElement("div");
+    applyMetrics(scroller, {
+      scrollWidth: 600,
+      clientWidth: 200,
+      top: 0,
+      bottom: window.innerHeight + 400,
+    });
+    scrollerRef.current = scroller;
+
+    callbacks.forEach((callback) => callback());
+
+    await waitFor(() => {
+      expect(bar.style.display).not.toBe("none");
+    });
+  });
+});
+
 describe("StickyTableScrollbar visibility", () => {
   it("shows the sticky bar when the table overflows and its own scrollbar is below the viewport", async () => {
     setup({
