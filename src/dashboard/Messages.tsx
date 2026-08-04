@@ -11,6 +11,7 @@ import ResponsiveSelect from "../components/ui/ResponsiveSelect";
 import AdminPageHeader from "./components/AdminPageHeader";
 import TableCard from "./components/TableCard";
 import TableScroller from "./components/TableScroller";
+import StickyTableScrollbar from "./components/StickyTableScrollbar";
 import {
   fetchMessageReplies,
   retryFailedReply,
@@ -160,6 +161,7 @@ export default function Messages() {
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [retryLoadingId, setRetryLoadingId] = useState<string | null>(null);
   const viewedMessageIdRef = useRef<string | null>(null);
+  const tableScrollerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -533,7 +535,7 @@ export default function Messages() {
         extra={
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:flex-nowrap">
             <div
-              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold ${
+              className={`flex w-fit shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold ${
                 isLive
                   ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-600"
                   : "border-slate-300/40 bg-slate-500/10 text-slate-500"
@@ -597,7 +599,7 @@ export default function Messages() {
            </div>
          ) : (
            <>
-             <TableScroller className="hidden lg:block">
+             <TableScroller className="hidden lg:block" scrollRef={tableScrollerRef}>
              <table className="w-full text-left text-sm">
               <thead
                 className={
@@ -797,6 +799,8 @@ export default function Messages() {
           </div>
         )}
       </TableCard>
+
+      <StickyTableScrollbar scrollerRef={tableScrollerRef} />
 
       {viewingMessage && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 sm:items-center">

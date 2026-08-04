@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  corsPreflight,
+  jsonResponse,
+  resolveAllowedOrigin,
+} from "../_shared/cors.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -9,14 +14,6 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
     persistSession: false,
   },
 });
-
-const CORS_ORIGINS = [
-  Deno.env.get("APP_URL") ?? "",
-  Deno.env.get("VITE_APP_URL") ?? "http://localhost:5173",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:3000",
-].filter((origin) => origin.length > 0);
 
 const MAX_NAME_LENGTH = 80;
 const MAX_EMAIL_LENGTH = 160;
@@ -48,26 +45,6 @@ const ALLOWED_BUDGETS = [
   "$50,000+",
   "Not sure yet",
 ];
-
-function corsHeaders(origin: string): Record<string, string> {
-  return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Max-Age": "86400",
-    "Vary": "Origin",
-  };
-}
-
-function jsonResponse(body: unknown, status: number, origin: string): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      ...corsHeaders(origin),
-    },
-  });
-}
 
 async function hashIp(ip: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -159,21 +136,17 @@ function validateInput(input: ContactFormValues): string | null {
 
 serve(async (req) => {
   console.log("submit-contact:start", { method: req.method });
-  const origin = req.headers.get("origin") ?? "";
+  const origin = req.headers.get("origin");
 
   if (req.method === "OPTIONS") {
-    const allowOrigin = CORS_ORIGINS.includes(origin) ? origin : CORS_ORIGINS[0];
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders(allowOrigin),
-    });
+    return corsPreflight(origin);
   }
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
-  if (!CORS_ORIGINS.includes(origin)) {
+  if (!resolveAllowedOrigin(origin)) {
     return jsonResponse({ error: "Origin not allowed" }, 403, origin);
   }
 

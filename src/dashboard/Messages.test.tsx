@@ -77,6 +77,31 @@ beforeEach(() => {
   ];
 });
 
+describe("Messages toolbar", () => {
+  it("renders the live badge, search, status filter, and export button", async () => {
+    renderMessages();
+    await screen.findAllByText("alice@test.com");
+
+    expect(screen.getByText("Live")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Search by name, email or subject")).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export CSV" })).toBeInTheDocument();
+  });
+
+  it("shows an error toast when exporting with no messages", async () => {
+    mockMessages = [];
+    renderMessages();
+
+    await waitFor(() => {
+      expect(screen.getByText("No messages found.")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+
+    expect(toastError).toHaveBeenCalledWith("No messages available to export.");
+  });
+});
+
 describe("Messages status filter dropdown", () => {
   it("lists every original status option with unchanged labels and values", async () => {
     renderMessages();

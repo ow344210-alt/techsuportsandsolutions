@@ -1,4 +1,5 @@
 import { supabase } from "../supabase/client";
+import { getFunctionErrorMessage } from "./functionErrors";
 import type { ContactMessageReply, ReplyFormData, ReplySendResult } from "./contactMessageReplies";
 
 export async function createContactMessageReply(
@@ -32,7 +33,10 @@ export async function sendReplyEmail(replyId: string): Promise<ReplySendResult> 
   );
 
   if (error) {
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: await getFunctionErrorMessage(error, "Failed to send reply"),
+    };
   }
 
   if (data && typeof data === "object" && "error" in data && data.error) {

@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  corsPreflight,
+  jsonResponse,
+  resolveAllowedOrigin,
+} from "../_shared/cors.ts";
 
 function getRequiredEnv(name: string): string {
   const value = Deno.env.get(name);
@@ -23,58 +28,19 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
   },
 });
 
-const CORS_ORIGINS = [
-  Deno.env.get("APP_URL") ?? "",
-  Deno.env.get("VITE_APP_URL") ?? "",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:3000",
-].filter((origin) => origin.length > 0);
-
-function corsHeaders(origin: string): Record<string, string> {
-  return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Max-Age": "86400",
-    Vary: "Origin",
-  };
-}
-
-function jsonResponse(
-  body: unknown,
-  status: number,
-  origin: string,
-): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...corsHeaders(origin),
-      "Content-Type": "application/json",
-    },
-  });
-}
-
 serve(async (req: Request) => {
-  const origin = req.headers.get("origin") ?? "";
-  const allowOrigin = CORS_ORIGINS.includes(origin)
-    ? origin
-    : CORS_ORIGINS[0] ?? "*";
+  const origin = req.headers.get("origin");
 
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders(allowOrigin),
-    });
+    return corsPreflight(origin);
   }
 
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405, allowOrigin);
+    return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
-  if (origin && !CORS_ORIGINS.includes(origin)) {
-    return jsonResponse({ error: "Origin not allowed" }, 403, allowOrigin);
+  if (origin && !resolveAllowedOrigin(origin)) {
+    return jsonResponse({ error: "Origin not allowed" }, 403, origin);
   }
 
   try {
@@ -83,7 +49,7 @@ serve(async (req: Request) => {
       return jsonResponse(
         { error: "Missing authorization header" },
         401,
-        allowOrigin,
+        origin,
       );
     }
 
@@ -97,7 +63,7 @@ serve(async (req: Request) => {
       return jsonResponse(
         { error: "Invalid authentication" },
         401,
-        allowOrigin,
+        origin,
       );
     }
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -107,7 +73,7 @@ serve(async (req: Request) => {
       .single();
 
     if (profileError || !profile || profile.role !== "admin" || profile.is_disabled) {
-      return jsonResponse({ error: "Unauthorized" }, 403, allowOrigin);
+      return jsonResponse({ error: "Unauthorized" }, 403, origin);
     }
 
     const body = await req.json();
@@ -117,7 +83,7 @@ serve(async (req: Request) => {
       return jsonResponse(
         { error: "Missing or invalid replyId" },
         400,
-        allowOrigin,
+        origin,
       );
     }
 
@@ -131,7 +97,7 @@ serve(async (req: Request) => {
       return jsonResponse(
         { error: "Reply record not found" },
         404,
-        allowOrigin,
+        origin,
       );
     }
 
@@ -139,7 +105,7 @@ serve(async (req: Request) => {
       return jsonResponse(
         { error: "Reply has already been sent" },
         400,
-        allowOrigin,
+        origin,
       );
     }
 
@@ -147,7 +113,7 @@ serve(async (req: Request) => {
       return jsonResponse(
         { error: "Reply is already being processed" },
         409,
-        allowOrigin,
+        origin,
       );
     }
 
@@ -174,7 +140,7 @@ serve(async (req: Request) => {
       return jsonResponse(
         { error: "Original contact message not found" },
         404,
-        allowOrigin,
+        origin,
       );
     }
 
@@ -193,7 +159,7 @@ serve(async (req: Request) => {
       return jsonResponse(
         { error: "Recipient email is missing" },
         400,
-        allowOrigin,
+        origin,
       );
     }
 
@@ -251,7 +217,7 @@ serve(async (req: Request) => {
       return jsonResponse(
         { error: "Failed to send email" },
         500,
-        allowOrigin,
+        origin,
       );
     }
 
@@ -279,14 +245,14 @@ serve(async (req: Request) => {
     return jsonResponse(
       { success: true, replyId, sentAt: now },
       200,
-      allowOrigin,
+      origin,
     );
   } catch (err) {
     console.error("Edge Function error:", err);
     return jsonResponse(
       { error: "Internal server error" },
       500,
-      allowOrigin,
+      origin,
     );
   }
 });

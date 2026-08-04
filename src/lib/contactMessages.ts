@@ -1,4 +1,5 @@
 import { supabase } from "../supabase/client";
+import { getFunctionErrorMessage } from "./functionErrors";
 import type { ContactMessageActivity } from "../types";
 
 export interface ContactMessagePayload {
@@ -56,7 +57,9 @@ export async function submitContactMessage(payload: ContactMessagePayload) {
     });
 
     if (error) {
-      throw error;
+      throw new Error(
+        await getFunctionErrorMessage(error, "Failed to submit message"),
+      );
     }
 
     if (!data?.success) {
