@@ -12,6 +12,15 @@ vi.mock("react-hot-toast", () => ({
 vi.mock("../lib/contactMessageReplyService", () => ({
   fetchMessageReplies: vi.fn(() => Promise.resolve([])),
   retryFailedReply: vi.fn(() => Promise.resolve({ success: true })),
+  createContactMessageReply: vi.fn(() =>
+    Promise.resolve({ success: true, replyId: "reply-1" }),
+  ),
+  sendReplyEmail: vi.fn(() =>
+    Promise.resolve({ success: true, replyId: "reply-1" }),
+  ),
+  updateContactMessageReply: vi.fn(() =>
+    Promise.resolve({ success: true, replyId: "reply-1" }),
+  ),
 }));
 
 let mockMessages: Array<Record<string, string>> = [];
@@ -29,6 +38,11 @@ vi.mock("../supabase/client", () => {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           order: vi.fn(() => ({ data: mockMessages, error: null })),
+        })),
+        update: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            select: vi.fn(() => ({ data: [{ id: "m1" }], error: null })),
+          })),
         })),
       })),
       channel: vi.fn(() => channel),
@@ -179,5 +193,25 @@ describe("Messages status filter dropdown", () => {
       expect(screen.getAllByText("alice@test.com").length).toBeGreaterThan(0);
       expect(screen.getAllByText("bob@test.com").length).toBeGreaterThan(0);
     });
+  });
+});
+
+describe("Messages reply flow", () => {
+  it("opens the reply dialog from the details modal", async () => {
+    renderMessages();
+    await screen.findAllByText("alice@test.com");
+
+    fireEvent.click(screen.getAllByRole("button", { name: /view/i })[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /reply/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Reply by Email")).toBeInTheDocument();
   });
 });

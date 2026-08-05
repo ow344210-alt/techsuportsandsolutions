@@ -38,6 +38,26 @@ type ContactMessage = {
   status: MessageStatus;
 };
 
+type ReplyModalConfig =
+  | {
+      mode: "create";
+      contactMessageId: string;
+      recipientEmail: string;
+      originalSubject: string;
+    }
+  | {
+      mode: "edit";
+      reply: ContactMessageReply;
+      contactMessageId: string;
+      recipientEmail: string;
+    }
+  | {
+      mode: "copy";
+      reply: ContactMessageReply;
+      contactMessageId: string;
+      recipientEmail: string;
+    };
+
 interface RawMessage {
   id?: unknown;
   full_name?: unknown;
@@ -156,7 +176,8 @@ export default function Messages() {
   const [viewingMessage, setViewingMessage] = useState<ContactMessage | null>(
     null,
   );
-  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyModal, setReplyModal] = useState<ReplyModalConfig | null>(null);
+  const [replyModalSession, setReplyModalSession] = useState(0);
   const [replies, setReplies] = useState<ContactMessageReply[]>([]);
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [retryLoadingId, setRetryLoadingId] = useState<string | null>(null);
@@ -256,7 +277,7 @@ export default function Messages() {
           if (viewedMessageIdRef.current === deletedId) {
             setViewingMessage(null);
             setReplies([]);
-            setReplyOpen(false);
+            setReplyModal(null);
           }
         },
       )
@@ -403,11 +424,11 @@ export default function Messages() {
   function closeMessageDetails() {
     setViewingMessage(null);
     setReplies([]);
-    setReplyOpen(false);
+    setReplyModal(null);
   }
 
   function openMessage(message: ContactMessage) {
-    setReplyOpen(false);
+    setReplyModal(null);
     setRepliesLoading(true);
     setViewingMessage(message);
 
@@ -467,6 +488,62 @@ export default function Messages() {
     } finally {
       setRetryLoadingId(null);
     }
+  }
+
+  // Every open of the reply modal gets a fresh session so the form is always
+  // (re)initialized from the current record and never retains stale content.
+  function openReplyModal(config: ReplyModalConfig) {
+    setReplyModalSession((session) => session + 1);
+    setReplyModal(config);
+  }
+
+  function openReply() {
+    if (!viewingMessage) {
+      return;
+    }
+
+    openReplyModal({
+      mode: "create",
+      contactMessageId: viewingMessage.id,
+      recipientEmail: viewingMessage.email,
+      originalSubject: viewingMessage.subject,
+    });
+  }
+
+  function openEditReply(reply: ContactMessageReply) {
+    if (!viewingMessage) {
+      return;
+    }
+
+    openReplyModal({
+      mode: "edit",
+      reply,
+      contactMessageId: viewingMessage.id,
+      recipientEmail: viewingMessage.email,
+    });
+  }
+
+  function openEditAsNewReply(reply: ContactMessageReply) {
+    if (!viewingMessage) {
+      return;
+    }
+
+    openReplyModal({
+      mode: "copy",
+      reply,
+      contactMessageId: viewingMessage.id,
+      recipientEmail: viewingMessage.email,
+    });
+  }
+
+  // Editing a reply without sending it must refresh the history but must NOT
+  // mark the parent message as replied.
+  async function handleReplySaved() {
+    if (!viewingMessage) {
+      return;
+    }
+
+    await refreshReplies(viewingMessage.id);
   }
 
   const filteredMessages = useMemo(() => {
@@ -865,6 +942,8 @@ export default function Messages() {
               <ReplyHistory
                 replies={replies}
                 onRetry={handleRetryReply}
+                onEdit={openEditReply}
+                onEditAsNew={openEditAsNewReply}
                 retryLoading={retryLoadingId}
               />
             )}
@@ -885,7 +964,7 @@ export default function Messages() {
 
               <button
                 type="button"
-                onClick={() => setReplyOpen(true)}
+                onClick={openReply}
                 className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto ${
                   isDarkTheme
                     ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
@@ -914,12 +993,16 @@ export default function Messages() {
 
       {viewingMessage && (
         <ReplyModal
-          contactMessageId={viewingMessage.id}
-          recipientEmail={viewingMessage.email}
+          key={replyModalSession}
+          mode={replyModal?.mode ?? "create"}
+          open={replyModal !== null}
+          contactMessageId={replyModal?.contactMessageId ?? viewingMessage.id}
+          recipientEmail={replyModal?.recipientEmail ?? viewingMessage.email}
           originalSubject={viewingMessage.subject}
-          open={replyOpen}
-          onClose={() => setReplyOpen(false)}
+          reply={replyModal && replyModal.mode !== "create" ? replyModal.reply : null}
+          onClose={() => setReplyModal(null)}
           onReplySent={() => void handleReplySent()}
+          onReplySaved={() => void handleReplySaved()}
         />
       )}
     </div>

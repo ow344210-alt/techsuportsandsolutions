@@ -32,6 +32,15 @@ vi.mock("../supabase/client", () => {
 vi.mock("../lib/contactMessageReplyService", () => ({
   fetchMessageReplies: vi.fn(() => Promise.resolve([])),
   retryFailedReply: vi.fn(() => Promise.resolve({ success: true })),
+  createContactMessageReply: vi.fn(() =>
+    Promise.resolve({ success: true, replyId: "reply-1" }),
+  ),
+  sendReplyEmail: vi.fn(() =>
+    Promise.resolve({ success: true, replyId: "reply-1" }),
+  ),
+  updateContactMessageReply: vi.fn(() =>
+    Promise.resolve({ success: true, replyId: "reply-1" }),
+  ),
 }));
 
 const MockAuthContext = createContext<AuthContextType | undefined>(undefined);

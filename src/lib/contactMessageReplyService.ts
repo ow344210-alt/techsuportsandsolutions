@@ -43,7 +43,45 @@ export async function sendReplyEmail(replyId: string): Promise<ReplySendResult> 
     return { success: false, error: data.error as string };
   }
 
+  // Only treat the send as successful once the reply row is confirmed to be
+  // in the "sent" state with a real provider message id (the edge function
+  // marks it before it responds, so this refetch is authoritative).
+  const { data: confirmed } = await supabase
+    .from("contact_message_replies")
+    .select("delivery_status, provider_message_id")
+    .eq("id", replyId)
+    .maybeSingle();
+
+  if (
+    !confirmed ||
+    confirmed.delivery_status !== "sent" ||
+    typeof confirmed.provider_message_id !== "string" ||
+    confirmed.provider_message_id === ""
+  ) {
+    return {
+      success: false,
+      error: "The email was not confirmed as sent. Please try again.",
+    };
+  }
+
   return { success: true, replyId };
+}
+
+export async function updateContactMessageReply(
+  replyId: string,
+  formData: ReplyFormData,
+): Promise<ReplySendResult> {
+  const { data, error } = await supabase.rpc("update_contact_message_reply", {
+    p_reply_id: replyId,
+    p_subject: formData.subject.trim(),
+    p_message: formData.message.trim(),
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, replyId: data as string };
 }
 
 export async function fetchMessageReplies(
