@@ -1,11 +1,12 @@
 export function resetHistoryAndNavigate(
-  navigate: (to: string) => void,
+  navigate: (to: string, options?: { replace?: boolean }) => void,
   to: string,
+  options?: { replace?: boolean },
 ) {
   const currentIdx = window.history.state?.idx;
 
   if (typeof currentIdx !== "number" || currentIdx <= 0) {
-    navigate(to);
+    navigate(to, options);
     return;
   }
 
@@ -16,7 +17,7 @@ export function resetHistoryAndNavigate(
     settled = true;
     window.removeEventListener("popstate", onPop);
     window.clearTimeout(fallback);
-    window.setTimeout(() => navigate(to), 0);
+    window.setTimeout(() => navigate(to, options), 0);
   }
 
   function onPop() {

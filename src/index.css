@@ -48,6 +48,27 @@ section {
   scroll-margin-top: 110px;
 }
 
+/* Justify long-form paragraph text on larger screens, matching the
+   `md:text-justify` convention already used across the components.
+   Kept inside `@layer base` so explicit Tailwind alignment utilities
+   (`text-left`, `text-center`, `text-justify`) still override it. */
+@layer base {
+  @media (min-width: 768px) {
+    p {
+      text-align: justify;
+    }
+  }
+}
+
+/* Footer-specific text wrapping: never split emails, phone numbers, domains,
+   or long labels into fragments. Scoped to the footer only so the rest of the
+   website keeps its normal wrapping behavior. */
+footer {
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+
 /* ==========================================================
    SCROLLBAR
 ========================================================== */

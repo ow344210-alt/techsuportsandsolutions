@@ -33,6 +33,9 @@ const FaqManager = lazy(() => import("../dashboard/FaqManager"));
 const FooterLinksManager = lazy(
   () => import("../dashboard/FooterLinksManager"),
 );
+const FooterSocialLinksManager = lazy(
+  () => import("../dashboard/FooterSocialLinksManager"),
+);
 const HeroSliderManager = lazy(() => import("../dashboard/HeroSliderManager"));
 const MarqueeManager = lazy(() => import("../dashboard/MarqueeManager"));
 const Support = lazy(() => import("../dashboard/Support"));
@@ -190,6 +193,7 @@ export default function AppRoutes() {
           <Route path="projects" element={<ProjectsManager />} />
           <Route path="industries" element={<IndustriesManager />} />
           <Route path="footer-links" element={<FooterLinksManager />} />
+          <Route path="social-links" element={<FooterSocialLinksManager />} />
           <Route path="hero-slider" element={<HeroSliderManager />} />
           <Route path="marquee" element={<MarqueeManager />} />
           <Route path="support" element={<Support />} />

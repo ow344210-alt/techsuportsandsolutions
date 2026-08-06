@@ -901,13 +901,14 @@ function ClientTrust() {
       "Clients should not have to explain their system again every time they need help. We value continuity, transparent commitments, direct communication, and long-term responsibility for the technology we deliver.",
     cta_text: "Start a Conversation",
   });
+  const trustVisualSrc = resolveAboutImage("client-trust");
 
   return (
     <Section
-      className="bg-[#091426] text-white"
+      className="bg-[#091426] text-white scroll-mt-24 pt-16 sm:pt-20 lg:pt-24"
       decoration={<BackgroundDecorations preset="splitRight" />}
     >
-      <div className="grid items-center gap-10 lg:grid-cols-[5fr_7fr] lg:gap-16">
+      <div className="grid items-start gap-10 lg:grid-cols-[5fr_7fr] lg:items-stretch lg:gap-16">
         <div data-aos="fade-left" className="flex flex-col justify-center">
           <Eyebrow>{content.eyebrow}</Eyebrow>
           <SectionHeading title1={content.heading} title2={content.heading2} />
@@ -928,14 +929,22 @@ function ClientTrust() {
 
         <div
           data-aos="fade-right"
-          className="relative flex w-full items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0E1627] via-[#111A2E] to-[#0B1220] order-first"
+          className="relative order-first flex min-h-0 w-full items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0E1627] via-[#111A2E] to-[#0B1220] lg:h-full"
         >
+          {trustVisualSrc && (
+            <img
+              src={trustVisualSrc}
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-2xl hidden lg:block"
+            />
+          )}
           <AboutSectionVisual
             imageKey="client-trust"
             alt="Building long-term trust with clients"
             fallbackIcon={ShieldCheck}
             fallbackLabel="Why Clients Trust Us"
-            className="block object-center"
+            className="relative z-10 block !object-cover lg:h-full lg:max-h-full"
           />
         </div>
       </div>

@@ -1,17 +1,27 @@
-// Public Footer. Quick Links, Services, contact/social details, and the
-// newsletter signup are all dynamic — Quick Links via footer_links table,
-// Services pulled live from the same services table used across the site
-// (no duplicate data entry), contact/social shared with the Contact page's
-// "contact-info" content section. Real fallbacks keep every column populated
-// even before the CMS has content published.
-import { useEffect, useState } from "react";
+// Public Footer. The middle area follows a strict, balanced four-column layout
+// (Brand, Services, Quick Links, Contact) where every column carries roughly
+// the same six-row rhythm. Services use the site's real service titles and
+// routes; Quick Links are the six main public routes from the shared nav
+// config; contact details are shared with the Contact page's "contact-info"
+// content section, with an admin-managed social icon row (footer_social_links)
+// completing the Contact column.
+import { useEffect, useState, type ReactNode } from "react";
 import logo from "../assets/tech-supports-logo.webp";
-import { Mail, Phone as PhoneIcon, MapPin, Clock, ArrowUp, Heart, Send } from "lucide-react";
+import {
+  ArrowUp,
+  Clock,
+  Heart,
+  Mail,
+  MapPin,
+  Phone as PhoneIcon,
+  Send,
+} from "lucide-react";
 import toast from "react-hot-toast";
-import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useSiteContent } from "../hooks/useSiteContent";
 import { useFooterLinks } from "../hooks/useFooterLinks";
+import { useFooterSocialLinks } from "../hooks/useFooterSocialLinks";
+import { getFooterSocialIcon } from "../lib/footerSocialLinks";
 import { NAV_LINKS } from "../config/nav.config";
 import { fetchActiveServices } from "../lib/services";
 import type { Service } from "../lib/services";
@@ -19,20 +29,11 @@ import { subscribeToNewsletter } from "../lib/newsletter";
 import Button from "./ui/Button";
 import { BackgroundDecorations } from "./background";
 
-// Shown only while the CMS has no active footer links — mirrors every main
-// navigation route so the column is never empty, plus a dedicated FAQ link that
-// drops visitors straight to the FAQ section on the Contact page.
-const FALLBACK_QUICK_LINKS: Array<{ label: string; url: string }> = [
-  ...NAV_LINKS.map((link) => ({
-    label: link.name,
-    url: link.href,
-  })),
-  { label: "FAQ", url: "/contact#contact-faq" },
-];
-
-// Shown only while the CMS has no published services — matches the service
-// names used across the site so the column is never empty.
-const FALLBACK_SERVICES: string[] = [
+// The six primary services shown in the footer, using the site's real service
+// labels. They use the real service title and, once the live service record
+// loads, its real anchor route. Removing entries from the footer never
+// affects the actual service pages or CMS data.
+const FOOTER_SERVICE_TITLES: string[] = [
   "Web Development",
   "Mobile App Development",
   "Software Development",
@@ -41,21 +42,112 @@ const FALLBACK_SERVICES: string[] = [
   "Cloud & IT Services",
 ];
 
-function formatSocialHandle(url: string) {
-  try {
-    const path = new URL(url).pathname.replace(/\/+$/, "").replace(/^\/+/, "");
-    return path ? `@${path}` : url;
-  } catch {
-    return url;
+// The six public Quick Links shown in the footer, derived from the shared nav
+// config so they always keep the site's exact internal routes.
+const FOOTER_QUICK_LINKS: Array<{ label: string; url: string }> = NAV_LINKS.map(
+  (link) => ({ label: link.name, url: link.href }),
+);
+
+// Concise, professional description for the Brand column. It paraphrases the
+// company's real information already stored in site_content (footer →
+// description) and is tuned to fill roughly six visual lines on desktop so the
+// Brand column balances the three link columns.
+const FOOTER_DESCRIPTION =
+  "Tech Supports & Solutions builds and maintains websites, mobile applications, and reliable business software for startups and growing companies. Based in Karachi, we deliver practical technology solutions with trusted ongoing support to clients worldwide.";
+
+// Normalizes a service title so footer labels match live CMS titles even when
+// punctuation or conjunctions differ (e.g. "Cloud & IT Services" vs
+// "Cloud and IT Services").
+function normalizeServiceTitle(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\band\b/g, "")
+    .replace(/[&\s-]+/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+// Shared styling for every footer navigation link: compact, natural line
+// height, a subtle purple hover plus a keyboard-focus ring. `inline-block`
+// keeps the hit area close to the label instead of stretching across the
+// whole column, while `py-0.5` keeps the tap target comfortable.
+const FOOTER_NAV_LINK_CLASS =
+  "inline-block py-0.5 leading-6 transition-colors hover:text-purple-400 focus-visible:text-purple-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-400/70";
+
+type FooterServiceLink = { key: string; title: string; url: string };
+
+// Consistent, compact column heading: small text with a short, subtle purple
+// underline so all headings sit on the same baseline as one aligned row.
+function FooterColumnHeading({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="mb-3 text-sm font-semibold text-white">
+      {children}
+      <span
+        aria-hidden="true"
+        className="mt-1.5 block h-0.5 w-6 rounded-full bg-purple-500"
+      />
+    </h3>
+  );
+}
+
+type ContactRowProps = {
+  icon: ReactNode;
+  children: ReactNode;
+  href?: string;
+  external?: boolean;
+  nowrap?: "always" | "sm";
+};
+
+// One consistent Contact row: fixed-width icon area, then text that always
+// starts from the same horizontal position. Every row shares the same height,
+// line height, spacing, and icon size so the column keeps a clean six-row
+// rhythm.
+function ContactRow({
+  icon,
+  children,
+  href,
+  external = false,
+  nowrap,
+}: ContactRowProps) {
+  const nowrapClass =
+    nowrap === "always" ? "whitespace-nowrap" : nowrap === "sm" ? "sm:whitespace-nowrap" : "";
+  const linkClass =
+    "transition-colors hover:text-purple-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-400/70";
+
+  const text = <span className={`min-w-0 ${nowrapClass}`}>{children}</span>;
+
+  let content: ReactNode = text;
+  if (href) {
+    content = external ? (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={linkClass}
+      >
+        {text}
+      </a>
+    ) : (
+      <a href={href} className={linkClass}>
+        {text}
+      </a>
+    );
   }
+
+  return (
+    <li className="flex items-start gap-2">
+      <span className="mt-0.5 flex w-4 shrink-0 items-center justify-center text-purple-400">
+        {icon}
+      </span>
+      {content}
+    </li>
+  );
 }
 
 function Footer() {
   const year = new Date().getFullYear();
 
   const { content } = useSiteContent("footer", {
-    description:
-      "Professional IT consulting, technical support, cybersecurity, cloud solutions and software development for modern businesses.",
+    description: FOOTER_DESCRIPTION,
     copyright_text: "Tech Supports & Solutions",
     newsletter_heading: "Stay Updated",
     newsletter_text: "Get the latest tips and updates delivered to your inbox.",
@@ -70,18 +162,24 @@ function Footer() {
     weekend_days: "Saturday",
     weekend_hours: "10:00 AM - 4:00 PM",
     sunday_status: "Closed",
-    facebook_url: "",
-    instagram_url: "https://www.instagram.com/techsupportsandsolutions/",
-    linkedin_url: "",
-    twitter_url: "",
   });
-
-  const { links: quickLinks } = useFooterLinks();
 
   const [services, setServices] = useState<Service[]>([]);
   const [newsletterName, setNewsletterName] = useState("");
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
+
+  // Admin-managed Quick Links and social links (FooterLinksManager /
+  // FooterSocialLinksManager). When the database has no entries the footer
+  // falls back to the shared nav config so the default layout is unchanged.
+  const { links: dbQuickLinks } = useFooterLinks();
+  const { links: socialLinks } = useFooterSocialLinks();
+
+  // Social icons render in sort_order so the admin's ordering is preserved on
+  // the public site even if the hook ever returns rows out of order.
+  const sortedSocialLinks = [...socialLinks].sort(
+    (a, b) => a.sort_order - b.sort_order,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -129,29 +227,39 @@ function Footer() {
     }
   }
 
-  const socialLinks = [
-    { url: contactInfo.facebook_url, icon: FaFacebook, label: "Facebook" },
-    { url: contactInfo.instagram_url, icon: FaInstagram, label: "Instagram" },
-    { url: contactInfo.linkedin_url, icon: FaLinkedin, label: "LinkedIn" },
-    { url: contactInfo.twitter_url, icon: FaTwitter, label: "Twitter" },
-  ].filter((s) => s.url && s.url.trim().length > 0);
+  // The six footer services, resolved against the live service list so each
+  // keeps its real title and anchor route. Titles are matched loosely so
+  // footer labels still find their live record (e.g. "Cloud & IT Services"
+  // matches "Cloud and IT Services"). Falls back to the plain /services route
+  // while the list is still loading or a title is unpublished.
+  const servicesToShow: FooterServiceLink[] = FOOTER_SERVICE_TITLES.map(
+    (title) => {
+      const match = services.find(
+        (service) =>
+          normalizeServiceTitle(service.title) === normalizeServiceTitle(title),
+      );
+      return {
+        key: match ? match.id : `footer-service-${title}`,
+        title,
+        url: match ? `/services#service-${match.id}` : "/services",
+      };
+    },
+  );
 
-  const quickLinksToShow: Array<{ id?: string; label: string; url: string }> =
-    quickLinks.length > 0
-      ? quickLinks.map((link) => ({ id: link.id, label: link.label, url: link.url }))
-      : FALLBACK_QUICK_LINKS;
-
-  const servicesToShow: Array<{ key: string; title: string; url: string }> =
-    services.length > 0
-      ? services.map((service) => ({ key: service.id, title: service.title, url: `/services#service-${service.id}` }))
-      : FALLBACK_SERVICES.map((title, index) => ({ key: `fallback-${index}`, title, url: "/services" }));
+  // Admin-managed Quick Links when present, otherwise the six shared nav links.
+  const quickLinksToShow: Array<{ label: string; url: string }> =
+    dbQuickLinks.length > 0
+      ? dbQuickLinks.map((link) => ({ label: link.label, url: link.url }))
+      : FOOTER_QUICK_LINKS;
 
   return (
     <footer className="relative isolate overflow-hidden border-t border-white/10 bg-[#040A13] text-white">
       <BackgroundDecorations preset="footer" />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
-        {/* Newsletter strip */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+        {/* Newsletter strip — original signup form, untouched. Heading, text,
+            name + email inputs, subscribe button, validation, loading state,
+            duplicate handling and success/error toasts all live here. */}
         <div className="mb-12 flex flex-col items-stretch gap-6 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl sm:mb-16 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="text-center lg:text-left">
             <h3 className="text-lg font-bold sm:text-xl">{content.newsletter_heading}</h3>
@@ -198,61 +306,47 @@ function Footer() {
           </form>
         </div>
 
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-12">
-          {/* Company */}
-          <div className="sm:col-span-2 lg:col-span-3">
-            <Link to="/" aria-label="Tech Supports & Solutions home" className="inline-block">
+        {/* Middle footer grid — strict, balanced reference structure. Four
+            columns from 1200px up, two columns on tablet, stacked below
+            768px. Controlled proportions give Brand and Contact more width
+            while Services and Quick Links stay compact. */}
+        <nav
+          aria-label="Footer"
+          className="grid grid-cols-1 gap-y-8 md:grid-cols-2 md:gap-x-8 min-[1200px]:!grid-cols-[1.2fr_0.9fr_0.8fr_1.35fr]"
+        >
+          {/* Brand — starts directly with the logo + name row (no heading),
+              then a concise ~6-line description. */}
+          <div className="min-w-0">
+            <Link
+              to="/"
+              aria-label="Tech Supports & Solutions home"
+              className="inline-flex items-center gap-3"
+            >
               <img
                 src={logo}
                 alt="Tech Supports & Solutions"
                 loading="lazy"
                 decoding="async"
-                className="mb-5 h-16 w-auto object-contain sm:h-20"
+                className="h-10 w-auto shrink-0 object-contain"
               />
+              <span className="whitespace-nowrap text-lg font-bold text-white">
+                {content.copyright_text}
+              </span>
             </Link>
-            <p className="max-w-sm text-sm leading-7 text-gray-400 sm:text-base sm:leading-8">
+            {/* `text-left` overrides the global base-layer justify rule so the
+                description keeps natural word spacing. */}
+            <p className="mt-3 text-left text-sm leading-6 text-gray-400">
               {content.description}
             </p>
           </div>
 
-          {/* Quick Links */}
-          <div className="lg:col-span-2">
-            <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Quick Links</h3>
-            <ul className="space-y-3 text-sm text-gray-400 sm:space-y-4 sm:text-base">
-              {quickLinksToShow.map((link) => (
-                <li key={link.id ?? link.url}>
-                  {link.url.startsWith("http") ? (
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="transition hover:text-purple-400"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link
-                      to={link.url}
-                      className="transition hover:text-purple-400"
-                    >
-                      {link.label}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Services — live from database, no duplicate entry needed */}
-          <div className="lg:col-span-4">
-            <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Services</h3>
-            <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-400 sm:text-base">
+          {/* Services — six primary services, one simple vertical list. */}
+          <div>
+            <FooterColumnHeading>Services</FooterColumnHeading>
+            <ul className="flex flex-col gap-2 text-sm text-gray-400">
               {servicesToShow.map((service) => (
                 <li key={service.key}>
-                  <Link
-                    to={service.url}
-                    className="transition hover:text-purple-400"
-                  >
+                  <Link to={service.url} className={FOOTER_NAV_LINK_CLASS}>
                     {service.title}
                   </Link>
                 </li>
@@ -260,56 +354,88 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Contact */}
-          <div className="lg:col-span-3">
-            <h3 className="mb-5 text-lg font-bold sm:mb-6 sm:text-xl">Contact</h3>
-            <div className="space-y-4 text-sm text-gray-400">
-              <a
-                href={`mailto:${contactInfo.email}`}
-                className="flex items-start gap-3 transition hover:text-purple-400"
-              >
-                <Mail size={18} className="mt-0.5 shrink-0" />
-                <span className="min-w-0 break-all">{contactInfo.email}</span>
-              </a>
-              <a
-                href={`tel:${contactInfo.phone}`}
-                className="flex items-center gap-3 transition hover:text-purple-400"
-              >
-                <PhoneIcon size={18} className="shrink-0" />
-                <span className="min-w-0 break-words">{contactInfo.phone}</span>
-              </a>
-              <p className="flex items-start gap-3">
-                <MapPin size={18} className="mt-0.5 shrink-0" />
-                <span className="min-w-0 break-words">{contactInfo.address}</span>
-              </p>
-              <p className="flex items-start gap-3">
-                <Clock size={18} className="mt-0.5 shrink-0" />
-                <span className="min-w-0 break-words">
-                  {contactInfo.working_days}: {contactInfo.working_hours}
-                </span>
-              </p>
-
-              {socialLinks.map((social) => {
-                const Icon = social.icon;
-                return (
-                  <a
-                    key={social.label}
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-gray-400 transition hover:text-purple-400"
-                  >
-                    <Icon size={18} className="shrink-0" />
-                    <span className="break-all text-sm">{formatSocialHandle(social.url)}</span>
-                  </a>
-                );
-              })}
-            </div>
+          {/* Quick Links — the six main routes as router links. When an admin
+              has configured footer_links these come from the database instead,
+              falling back to the shared nav routes otherwise. */}
+          <div>
+            <FooterColumnHeading>Quick Links</FooterColumnHeading>
+            <ul className="flex flex-col gap-2 text-sm text-gray-400">
+              {quickLinksToShow.map((link) => (
+                <li key={link.url}>
+                  <Link to={link.url} className={FOOTER_NAV_LINK_CLASS}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
 
-        {/* Bottom */}
-        <div className="mt-12 flex flex-col items-center gap-6 border-t border-white/10 pt-8 sm:mt-14 sm:flex-row sm:justify-between sm:gap-4">
+          {/* Contact — compact rows sharing one consistent structure:
+              fixed-width icon area, aligned text, same height and spacing.
+              Rows are address, email, phone, hours, then the admin-managed
+              social icon row (footer_social_links, enabled rows in sort
+              order — an empty set renders no icons). */}
+          <div className="min-w-0">
+            <FooterColumnHeading>Contact</FooterColumnHeading>
+            <ul className="flex flex-col gap-2.5 text-sm text-gray-400">
+              <ContactRow icon={<MapPin size={16} />}>
+                {contactInfo.address}
+              </ContactRow>
+              <ContactRow
+                icon={<Mail size={16} />}
+                href={`mailto:${contactInfo.email}`}
+                nowrap="always"
+              >
+                {contactInfo.email}
+              </ContactRow>
+              <ContactRow
+                icon={<PhoneIcon size={16} />}
+                href={`tel:${contactInfo.phone}`}
+                nowrap="always"
+              >
+                {contactInfo.phone}
+              </ContactRow>
+              <ContactRow icon={<Clock size={16} />} nowrap="sm">
+                {contactInfo.working_days}: {contactInfo.working_hours}
+              </ContactRow>
+              {sortedSocialLinks.length > 0 && (
+                <li>
+                  <ul
+                    className="flex flex-wrap items-center gap-2"
+                    aria-label="Social media links"
+                  >
+                    {sortedSocialLinks.map((link) => {
+                      const Icon = getFooterSocialIcon(link.icon_key);
+                      return (
+                        <li key={link.id}>
+                          <a
+                            href={link.url}
+                            target={link.open_in_new_tab ? "_blank" : undefined}
+                            rel={
+                              link.open_in_new_tab
+                                ? "noopener noreferrer"
+                                : undefined
+                            }
+                            aria-label={link.label || link.platform_key}
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-gray-400 transition-colors hover:border-purple-400/40 hover:text-purple-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-400/70"
+                          >
+                            <Icon size={16} />
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              )}
+            </ul>
+          </div>
+        </nav>
+
+        {/* Bottom bar — divider ~28–32px after the tallest column, then the
+            existing copyright line and back-to-top button. Social icons live in
+            the Contact column above. `text-left` keeps the copyright line off
+            the global justify rule. */}
+        <div className="mt-7 flex flex-col items-center gap-5 border-t border-white/10 pt-5 sm:mt-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <p className="flex flex-wrap items-center justify-center gap-2 text-center text-sm text-gray-500 sm:text-left">
             © {year} {content.copyright_text}
             <Heart size={16} className="text-pink-500" fill="currentColor" />

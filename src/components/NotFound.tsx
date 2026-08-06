@@ -7,7 +7,7 @@ export default function NotFound() {
   return (
     <>
       <SEO title="404 — Page Not Found" noIndex />
-      <div className="relative isolate flex min-h-[60vh] flex-col items-center justify-center overflow-hidden px-4 text-center">
+      <div className="relative isolate flex min-h-[60vh] flex-col items-center justify-center overflow-hidden px-4 pt-28 pb-20 text-center sm:pt-32 sm:pb-24">
       <BackgroundDecorations preset="heroMinimal" />
 
       {/* Decorative background "404" */}

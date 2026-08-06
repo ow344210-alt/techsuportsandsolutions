@@ -131,7 +131,7 @@ describe("Auth route protection", () => {
     vi.restoreAllMocks();
   });
 
-  it("unauthenticated user redirected to login via ProtectedRoute", () => {
+  it("unauthenticated user redirected to home via ProtectedRoute", () => {
     renderWithAuth(
       <>
         <ProtectedRoute><div>Protected Content</div></ProtectedRoute>
@@ -145,11 +145,11 @@ describe("Auth route protection", () => {
       },
     );
 
-    expect(screen.getByTestId("current-location")).toHaveTextContent("/login");
+    expect(screen.getByTestId("current-location")).toHaveTextContent("/");
     expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
   });
 
-  it("unauthenticated user redirected to login via AdminRoute", () => {
+  it("unauthenticated user redirected to home via AdminRoute", () => {
     renderWithAuth(
       <>
         <AdminRoute><div>Admin Content</div></AdminRoute>
@@ -163,7 +163,7 @@ describe("Auth route protection", () => {
       },
     );
 
-    expect(screen.getByTestId("current-location")).toHaveTextContent("/login");
+    expect(screen.getByTestId("current-location")).toHaveTextContent("/");
     expect(screen.queryByText("Admin Content")).not.toBeInTheDocument();
   });
 

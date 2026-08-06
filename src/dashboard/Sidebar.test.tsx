@@ -125,6 +125,7 @@ const EXPECTED_LABELS = [
   "Cards",
   "FAQs",
   "Footer Links",
+  "Social Links",
   "Contact Settings",
   "Users",
   "Support",
@@ -145,6 +146,7 @@ const EXPECTED_HREFS = [
   "/dashboard/cards",
   "/dashboard/faqs",
   "/dashboard/footer-links",
+  "/dashboard/social-links",
   "/dashboard/contact-settings",
   "/dashboard/users",
   "/dashboard/support",
@@ -180,6 +182,7 @@ describe("Sidebar navigation", () => {
     ["/dashboard/cards", "/dashboard/cards"],
     ["/dashboard/faqs", "/dashboard/faqs"],
     ["/dashboard/footer-links", "/dashboard/footer-links"],
+    ["/dashboard/social-links", "/dashboard/social-links"],
     ["/dashboard/contact-settings", "/dashboard/contact-settings"],
     ["/dashboard/users", "/dashboard/users"],
     ["/dashboard/support", "/dashboard/support"],
@@ -299,16 +302,16 @@ describe("Sidebar logout", () => {
     authValue.signOut = vi.fn(() => Promise.resolve());
   });
 
-  it("redirects to the sign in page after a confirmed logout", async () => {
+  it("redirects to the home page after a confirmed logout", async () => {
     swalFire.mockResolvedValue({ isConfirmed: true });
     const { container } = renderSidebarWithRoutes();
 
     fireEvent.click(desktopAside(container).querySelector("button")!);
 
     await waitFor(() => {
-      expect(screen.getByTestId("probe-location")).toHaveTextContent("/login");
+      expect(screen.getByTestId("probe-location")).toHaveTextContent("/");
     });
-    expect(screen.queryByText("Login Page")).toBeInTheDocument();
+    expect(screen.queryByText("Home Page")).toBeInTheDocument();
     expect(authValue.signOut).toHaveBeenCalled();
   });
 

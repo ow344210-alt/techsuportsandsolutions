@@ -18,6 +18,7 @@ import {
   ImagePlus,
   MoveHorizontal,
   Contact,
+  Share2,
 } from "lucide-react";
 
 import { useEffect, useRef } from "react";
@@ -95,6 +96,12 @@ const NAV_ITEMS = [
     end: false,
   },
   {
+    to: "/dashboard/social-links",
+    label: "Social Links",
+    icon: Share2,
+    end: false,
+  },
+  {
     to: "/dashboard/contact-settings",
     label: "Contact Settings",
     icon: Contact,
@@ -166,7 +173,7 @@ export default function Sidebar({
   async function logout() {
     const result = await showConfirm({
       title: "Sign out?",
-      text: "You will be returned to the sign in page.",
+      text: "You will be returned to the home page.",
       confirmButtonText: "Sign out",
       cancelButtonText: "Cancel",
       variant: "danger",
@@ -177,7 +184,7 @@ export default function Sidebar({
     try {
       await signOut();
       onClose?.();
-      resetHistoryAndNavigate(navigate, "/login");
+      resetHistoryAndNavigate(navigate, "/", { replace: true });
     } catch {
       toast.error("Unable to sign out. Please try again.");
     }

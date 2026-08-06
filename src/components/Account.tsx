@@ -117,7 +117,7 @@ export default function Account() {
   async function handleLogout() {
     const result = await showConfirm({
       title: "Sign out?",
-      text: "You will be returned to the sign in page.",
+      text: "You will be returned to the home page.",
       confirmButtonText: "Sign out",
       cancelButtonText: "Cancel",
       variant: "danger",
@@ -127,7 +127,7 @@ export default function Account() {
 
     try {
       await signOut();
-      resetHistoryAndNavigate(navigate, "/login");
+      resetHistoryAndNavigate(navigate, "/", { replace: true });
     } catch {
       toast.error("Unable to sign out. Please try again.");
     }

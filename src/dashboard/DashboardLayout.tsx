@@ -17,6 +17,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/tech-stack": "Tech Stack",
   "/dashboard/industries": "Industries",
   "/dashboard/footer-links": "Footer Links",
+  "/dashboard/social-links": "Social Links",
   "/dashboard/hero-slider": "Hero Slider",
   "/dashboard/support": "Support",
   "/dashboard/profile": "Profile",

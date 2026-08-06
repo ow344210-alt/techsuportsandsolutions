@@ -24,18 +24,18 @@ describe("resetHistoryAndNavigate", () => {
     setHistoryState(undefined);
     const navigate = vi.fn();
 
-    resetHistoryAndNavigate(navigate, "/login");
+    resetHistoryAndNavigate(navigate, "/", { replace: true });
 
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/", { replace: true });
   });
 
   it("navigates immediately when the router index is 0", () => {
     setHistoryState(0);
     const navigate = vi.fn();
 
-    resetHistoryAndNavigate(navigate, "/login");
+    resetHistoryAndNavigate(navigate, "/", { replace: true });
 
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/", { replace: true });
   });
 
   it("goes back to the first entry, then navigates once popstate fires", () => {
@@ -47,14 +47,14 @@ describe("resetHistoryAndNavigate", () => {
     window.history.go = go;
     const navigate = vi.fn();
 
-    resetHistoryAndNavigate(navigate, "/login");
+    resetHistoryAndNavigate(navigate, "/", { replace: true });
 
     expect(go).toHaveBeenCalledWith(-3);
     expect(navigate).not.toHaveBeenCalled();
     vi.advanceTimersByTime(0);
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/", { replace: true });
     vi.advanceTimersByTime(500);
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/", { replace: true });
   });
 
   it("defers the navigation out of the popstate handler so the browser truncates forward entries", () => {
@@ -66,11 +66,11 @@ describe("resetHistoryAndNavigate", () => {
     window.history.go = go;
     const navigate = vi.fn();
 
-    resetHistoryAndNavigate(navigate, "/login");
+    resetHistoryAndNavigate(navigate, "/", { replace: true });
 
     expect(navigate).not.toHaveBeenCalled();
     vi.advanceTimersByTime(0);
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/", { replace: true });
   });
 
   it("removes the popstate listener and timer once settled", () => {
@@ -83,11 +83,11 @@ describe("resetHistoryAndNavigate", () => {
     window.history.go = go;
     const navigate = vi.fn();
 
-    resetHistoryAndNavigate(navigate, "/login");
+    resetHistoryAndNavigate(navigate, "/", { replace: true });
 
     expect(removeEventListener).toHaveBeenCalledWith("popstate", expect.any(Function));
     vi.advanceTimersByTime(100);
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/", { replace: true });
   });
 
   it("navigates via the fallback timer when no popstate fires", () => {
@@ -96,12 +96,12 @@ describe("resetHistoryAndNavigate", () => {
     window.history.go = vi.fn();
     const navigate = vi.fn();
 
-    resetHistoryAndNavigate(navigate, "/login");
+    resetHistoryAndNavigate(navigate, "/", { replace: true });
 
     expect(navigate).not.toHaveBeenCalled();
     vi.advanceTimersByTime(99);
     expect(navigate).not.toHaveBeenCalled();
     vi.advanceTimersByTime(2);
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/login");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/", { replace: true });
   });
 });
