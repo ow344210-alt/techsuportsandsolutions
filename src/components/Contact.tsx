@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-// SENTINEL_20260803113229
 import type { FormEvent } from "react";
 import {
   ArrowRight,
@@ -142,8 +141,12 @@ export default function ContactPage() {
        toast.error("Please enter a subject.");
        return false;
      }
-     if (!form.message.trim() || form.message.trim().length < 10) {
-       toast.error("Please enter a message with at least 10 characters.");
+     if (form.subject.trim().length < 5) {
+       toast.error("Please enter a subject with at least 5 characters.");
+       return false;
+     }
+     if (!form.message.trim() || form.message.trim().length < 20) {
+       toast.error("Please enter a message with at least 20 characters.");
        return false;
      }
      if (!form.consent) {

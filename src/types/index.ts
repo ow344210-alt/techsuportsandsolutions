@@ -10,7 +10,7 @@ export interface UserProfile {
   updated_at: string;
 }
 
-export type ContactMessageStatus = "new" | "in_progress" | "replied" | "resolved" | "spam" | "Read";
+export type ContactMessageStatus = "new" | "in_progress" | "replied" | "resolved" | "spam" | "read";
 
 export type ContactMessagePriority = "low" | "normal" | "high" | "urgent";
 

@@ -22,13 +22,20 @@ export function SiteContentProvider({ children }: SiteContentProviderProps) {
   const [contentMap, setContentMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
 
-  async function load() {
-    try {
-      const fields = await fetchAllContent();
-      setContentMap(buildMap(fields));
-    } finally {
-      setLoading(false);
-    }
+  function load(): Promise<void> {
+    return fetchAllContent()
+      .then((fields) => setContentMap(buildMap(fields)))
+      .catch((error: unknown) => {
+        // Failing to load CMS content must not take down the app: every
+        // consumer renders from its static fallbacks when the map is empty.
+        if (error instanceof Error) {
+          console.error(
+            "SiteContentProvider: failed to load site content",
+            error.message,
+          );
+        }
+      })
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {

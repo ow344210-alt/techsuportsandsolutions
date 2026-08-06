@@ -20,7 +20,7 @@ export interface ContactMessage {
   user_id: string | null;
 }
 
-export type ContactMessageStatus = "new" | "in_progress" | "replied" | "resolved" | "spam" | "Read";
+export type ContactMessageStatus = "new" | "in_progress" | "replied" | "resolved" | "spam" | "read";
 export type ContactMessagePriority = "low" | "normal" | "high" | "urgent";
 
 export interface UpdateStatusResult {
@@ -180,7 +180,7 @@ export async function getContactMessageActivity(
   messageId: string,
 ): Promise<{ success: boolean; data: ContactMessageActivity[] | null; error: string | null }> {
   const { data, error } = await supabase
-    .from("contact_message_activities")
+    .from("contact_message_activity")
     .select("*")
     .eq("contact_message_id", messageId)
     .order("created_at", { ascending: true });

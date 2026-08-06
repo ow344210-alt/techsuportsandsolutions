@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Save, X } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { supabase } from "../supabase/client";
 import Button from "../components/ui/Button";
@@ -16,27 +17,40 @@ export default function Settings() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function handlePasswordUpdate() {
+    if (saving) return;
+
     if (!password || !confirmPassword) {
+      toast.error("Please fill in both password fields.");
       return;
     }
 
     if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
       return;
     }
 
     if (password !== confirmPassword) {
+      toast.error("Passwords do not match.");
       return;
     }
 
+    setSaving(true);
     const { error } = await supabase.auth.updateUser({
       password: password,
     });
+    setSaving(false);
 
     if (error) {
+      toast.error(error.message || "Unable to update your password.");
       return;
     }
+
+    toast.success("Password updated successfully.");
+    setPassword("");
+    setConfirmPassword("");
     setTimeout(() => {
       navigate("/dashboard");
     }, 2000);
@@ -81,6 +95,8 @@ export default function Settings() {
               type="button"
               onClick={() => void handlePasswordUpdate()}
               icon={<Save size={20} />}
+              loading={saving}
+              loadingText="Saving..."
             >
               Save Changes
             </Button>
