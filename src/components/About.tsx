@@ -907,7 +907,7 @@ function ClientTrust() {
       className="bg-[#091426] text-white"
       decoration={<BackgroundDecorations preset="splitRight" />}
     >
-      <div className="grid items-stretch gap-10 lg:grid-cols-2 lg:gap-16">
+      <div className="grid items-center gap-10 lg:grid-cols-[5fr_7fr] lg:gap-16">
         <div data-aos="fade-left" className="flex flex-col justify-center">
           <Eyebrow>{content.eyebrow}</Eyebrow>
           <SectionHeading title1={content.heading} title2={content.heading2} />
@@ -928,14 +928,14 @@ function ClientTrust() {
 
         <div
           data-aos="fade-right"
-          className="relative min-h-[280px] overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0E1627] via-[#111A2E] to-[#0B1220] sm:min-h-[360px] lg:order-first lg:min-h-0"
+          className="relative flex w-full items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0E1627] via-[#111A2E] to-[#0B1220] order-first"
         >
           <AboutSectionVisual
             imageKey="client-trust"
             alt="Building long-term trust with clients"
             fallbackIcon={ShieldCheck}
             fallbackLabel="Why Clients Trust Us"
-            className="absolute inset-0 h-full w-full !object-cover"
+            className="block object-center"
           />
         </div>
       </div>
