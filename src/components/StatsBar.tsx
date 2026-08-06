@@ -21,12 +21,22 @@ function StatsBar() {
   ];
 
   return (
-    <Section spacing="tight" className="bg-[#091426] text-white pb-10! md:pb-12!">
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4" data-aos="fade-up">
-        {stats.map((stat, index) => (
-          <div key={index} className="text-center">
-            <h3 className="text-4xl font-bold gradient-text md:text-5xl">{stat.value}</h3>
-            <p className="mt-2 text-sm text-gray-400 md:text-base">{stat.label}</p>
+    <Section spacing="compact" className="bg-[#091426] text-white">
+      <div
+        className="grid grid-cols-2 gap-x-6 gap-y-10 min-[1200px]:grid-cols-4 min-[1200px]:gap-x-8"
+        data-aos="fade-up"
+      >
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className="flex min-w-0 flex-col items-center justify-start text-center"
+          >
+            <div className="min-h-[58px] text-5xl font-bold leading-none gradient-text">
+              {stat.value}
+            </div>
+            <p className="mt-3 min-h-[24px] text-center text-base leading-6 text-gray-400">
+              {stat.label}
+            </p>
           </div>
         ))}
       </div>
