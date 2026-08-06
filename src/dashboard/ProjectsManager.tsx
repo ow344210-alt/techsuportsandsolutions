@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ImagePlus, Code } from "lucide-react";
 import { useTheme } from "../context/ThemeContext.types";
+import { useFormDraft } from "../hooks/useFormDraft";
 import {
   createProject,
   deleteProject,
@@ -57,6 +58,22 @@ export default function ProjectsManager() {
   const [previousImageUrl, setPreviousImageUrl] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const { restored: draftRestored, isConflict: draftConflict, clear: clearDraft } = useFormDraft<ProjectPayload>({
+    formName: "project",
+    id: editingProject?.id ?? null,
+    values: form,
+    active: isFormOpen,
+    recordUpdatedAt: editingProject?.updated_at ?? null,
+    onRestore: (restoredValues) => {
+      setForm(restoredValues);
+      toast.success("Unsaved draft restored.");
+    },
+  });
+  useEffect(() => {
+    if (draftRestored && draftConflict) {
+      toast.error("This record was changed elsewhere after your draft was saved. Review before saving.");
+    }
+  }, [draftRestored, draftConflict]);
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -136,6 +153,7 @@ export default function ProjectsManager() {
         const created = await createProject(form, nextOrderIndex);
         setProjects((current) => [...current, created]);
       }
+      clearDraft();
       closeForm();
     }  finally {
       setSaving(false);

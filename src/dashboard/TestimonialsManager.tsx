@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Star, Plus, User } from "lucide-react";
 import { useTheme } from "../context/ThemeContext.types";
+import { useFormDraft } from "../hooks/useFormDraft";
 import {
   createTestimonial,
   deleteTestimonial,
@@ -41,6 +42,22 @@ export default function TestimonialsManager() {
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [query, setQuery] = useState("");
+  const { restored: draftRestored, isConflict: draftConflict, clear: clearDraft } = useFormDraft<TestimonialPayload>({
+    formName: "testimonial",
+    id: editingTestimonial?.id ?? null,
+    values: form,
+    active: isFormOpen,
+    recordUpdatedAt: editingTestimonial?.updated_at ?? null,
+    onRestore: (restoredValues) => {
+      setForm(restoredValues);
+      toast.success("Unsaved draft restored.");
+    },
+  });
+  useEffect(() => {
+    if (draftRestored && draftConflict) {
+      toast.error("This record was changed elsewhere after your draft was saved. Review before saving.");
+    }
+  }, [draftRestored, draftConflict]);
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -110,6 +127,7 @@ export default function TestimonialsManager() {
         const created = await createTestimonial(form, nextOrderIndex);
         setTestimonials((current) => [...current, created]);
       }
+      clearDraft();
       closeForm();
     } catch {
       toast.error("Something went wrong. Please try again.");

@@ -5,6 +5,7 @@ import {
   PROJECT_IMAGE_BUCKET,
   PROJECT_IMAGE_MAX_SIZE_BYTES,
 } from "./constants";
+import { optimizeImageFile } from "./imageOptimization";
 
 class ProjectImageError extends Error {
   constructor(message: string) {
@@ -188,7 +189,9 @@ function sanitizeFileName(fileName: string): string {
 export async function uploadProjectImage(file: File): Promise<string> {
   validateProjectImageFile(file);
 
-  const fileExt = "." + file.name.split(".").pop()?.toLowerCase();
+  const optimized = await optimizeImageFile(file);
+
+  const fileExt = "." + (optimized.file.name.split(".").pop()?.toLowerCase() ?? "webp");
   const safeName = sanitizeFileName(
     `${crypto.randomUUID()}${fileExt}`,
   );
@@ -196,7 +199,7 @@ export async function uploadProjectImage(file: File): Promise<string> {
 
   const { error: uploadError } = await supabase.storage
     .from(PROJECT_IMAGE_BUCKET)
-    .upload(filePath, file, { cacheControl: "3600", upsert: false });
+    .upload(filePath, optimized.file, { cacheControl: "3600", upsert: false });
 
   if (uploadError) {
     const message = uploadError.message ?? "Unknown upload error";

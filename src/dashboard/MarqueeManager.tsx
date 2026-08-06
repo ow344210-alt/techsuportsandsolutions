@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import toast from "react-hot-toast";
 import { useTheme } from "../context/ThemeContext.types";
+import { useFormDraft } from "../hooks/useFormDraft";
 import {
   createMarqueeItem,
   deleteMarqueeItem,
@@ -60,6 +61,23 @@ export default function MarqueeManager() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
 
+  const { restored: draftRestored, isConflict: draftConflict, clear: clearDraft } = useFormDraft<MarqueeItemPayload>({
+    formName: "marquee",
+    id: editingItem?.id ?? null,
+    values: form,
+    active: isFormOpen,
+    recordUpdatedAt: editingItem?.updated_at ?? null,
+    onRestore: (restoredValues) => {
+      setForm(restoredValues);
+      toast.success("Unsaved draft restored.");
+    },
+  });
+  useEffect(() => {
+    if (draftRestored && draftConflict) {
+      toast.error("This record was changed elsewhere after your draft was saved. Review before saving.");
+    }
+  }, [draftRestored, draftConflict]);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -114,6 +132,7 @@ export default function MarqueeManager() {
         setItems((current) => normalizeOrder([...current, created]));
         toast.success("Added.");
       }
+      clearDraft();
       setIsFormOpen(false);
     } catch {
       toast.error("Unable to save.");

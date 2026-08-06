@@ -1,4 +1,5 @@
 import { supabase } from "../supabase/client";
+import { optimizeImageFile } from "./imageOptimization";
 
 export interface ManagedImage {
   id: string;
@@ -74,12 +75,13 @@ export async function deleteManagedImage(id: string): Promise<void> {
 }
 
 export async function uploadManagedImage(file: File): Promise<string> {
-  const fileExt = file.name.split(".").pop();
+  const optimized = await optimizeImageFile(file);
+  const fileExt = optimized.file.name.split(".").pop();
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from("website-images")
-    .upload(fileName, file, { cacheControl: "3600", upsert: false });
+    .upload(fileName, optimized.file, { cacheControl: "3600", upsert: false });
 
   if (uploadError) throw uploadError;
 

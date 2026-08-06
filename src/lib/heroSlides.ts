@@ -2,6 +2,7 @@
 // backgrounds, custom CTA buttons, overlay strength, and admin-controlled order.
 import { supabase } from "../supabase/client";
 import { cachedQuery } from "./dataCache";
+import { optimizeImageFile } from "./imageOptimization";
 
 export type MediaType = "image" | "video";
 export type AnimationType = "fade" | "slide";
@@ -96,12 +97,13 @@ export async function swapSlideOrder(a: HeroSlide, b: HeroSlide): Promise<void> 
 }
 
 export async function uploadSlideMedia(file: File): Promise<string> {
-  const fileExt = file.name.split(".").pop();
+  const optimized = await optimizeImageFile(file);
+  const fileExt = optimized.file.name.split(".").pop();
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from("hero-slides")
-    .upload(fileName, file, { cacheControl: "3600", upsert: false });
+    .upload(fileName, optimized.file, { cacheControl: "3600", upsert: false });
 
   if (uploadError) throw uploadError;
 

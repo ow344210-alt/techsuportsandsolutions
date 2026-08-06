@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ImagePlus } from "lucide-react";
 import { useTheme } from "../context/ThemeContext.types";
+import { useFormDraft } from "../hooks/useFormDraft";
 import AdminFormModal from "./components/AdminFormModal";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
@@ -47,6 +48,23 @@ export default function HeroSliderManager() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+
+  const { restored: draftRestored, isConflict: draftConflict, clear: clearDraft } = useFormDraft<HeroSlidePayload>({
+    formName: "hero-slide",
+    id: editingSlide?.id ?? null,
+    values: form,
+    active: isFormOpen,
+    recordUpdatedAt: editingSlide?.updated_at ?? null,
+    onRestore: (restoredValues) => {
+      setForm(restoredValues);
+      toast.success("Unsaved draft restored.");
+    },
+  });
+  useEffect(() => {
+    if (draftRestored && draftConflict) {
+      toast.error("This record was changed elsewhere after your draft was saved. Review before saving.");
+    }
+  }, [draftRestored, draftConflict]);
 
   useEffect(() => {
     let mounted = true;
@@ -138,6 +156,7 @@ export default function HeroSliderManager() {
         const created = await createSlide(form, nextOrder);
         setSlides((current) => [...current, created]);
       }
+      clearDraft();
       setIsFormOpen(false);
     } catch {
       toast.error("Something went wrong. Please try again.");

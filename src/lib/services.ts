@@ -1,5 +1,6 @@
 import { supabase } from "../supabase/client";
 import { cachedQuery } from "./dataCache";
+import { optimizeImageFile } from "./imageOptimization";
 
 export const SERVICE_ICONS = [
   "Monitor",
@@ -187,13 +188,14 @@ export async function swapServiceOrder(
 // =======================
 
 export async function uploadServiceImage(file: File): Promise<string> {
-  const fileExt = file.name.split(".").pop();
+  const optimized = await optimizeImageFile(file);
+  const fileExt = optimized.file.name.split(".").pop();
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
   const filePath = `${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from("service-images")
-    .upload(filePath, file, { cacheControl: "3600", upsert: false });
+    .upload(filePath, optimized.file, { cacheControl: "3600", upsert: false });
 
   if (uploadError) throw uploadError;
 

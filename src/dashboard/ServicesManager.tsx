@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ImagePlus, Star } from "lucide-react";
 import { useTheme } from "../context/ThemeContext.types";
+import { useFormDraft } from "../hooks/useFormDraft";
 import AdminFormModal from "./components/AdminFormModal";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
@@ -50,6 +51,23 @@ export default function ServicesManager() {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"All" | string>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | ServiceStatus>("All");
+
+  const { restored: draftRestored, isConflict: draftConflict, clear: clearDraft } = useFormDraft<ServicePayload>({
+    formName: "service",
+    id: editingService?.id ?? null,
+    values: form,
+    active: isFormOpen,
+    recordUpdatedAt: editingService?.updated_at ?? null,
+    onRestore: (restoredValues) => {
+      setForm(restoredValues);
+      toast.success("Unsaved draft restored.");
+    },
+  });
+  useEffect(() => {
+    if (draftRestored && draftConflict) {
+      toast.error("This record was changed elsewhere after your draft was saved. Review before saving.");
+    }
+  }, [draftRestored, draftConflict]);
 
   useEffect(() => {
     let mounted = true;
@@ -135,6 +153,7 @@ export default function ServicesManager() {
         setServices((current) => [...current, created]);
       }
 
+      clearDraft();
       closeForm();
     } catch {
       toast.error("Something went wrong. Please try again.");

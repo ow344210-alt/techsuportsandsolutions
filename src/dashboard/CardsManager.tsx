@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, ImagePlus, Plus } from "lucide-react";
 import { useTheme } from "../context/ThemeContext.types";
+import { useFormDraft } from "../hooks/useFormDraft";
 import AdminFormModal from "./components/AdminFormModal";
 import AdminPageHeader from "./components/AdminPageHeader";
 import AdminRowActions from "./components/AdminRowActions";
@@ -273,6 +274,23 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  const { restored: draftRestored, isConflict: draftConflict, clear: clearDraft } = useFormDraft<ContentCardPayload>({
+    formName: `card-${groupId}`,
+    id: editingCard?.id ?? null,
+    values: form,
+    active: isFormOpen,
+    recordUpdatedAt: editingCard?.updated_at ?? null,
+    onRestore: (restoredValues) => {
+      setForm(restoredValues);
+      toast.success("Unsaved draft restored.");
+    },
+  });
+  useEffect(() => {
+    if (draftRestored && draftConflict) {
+      toast.error("This record was changed elsewhere after your draft was saved. Review before saving.");
+    }
+  }, [draftRestored, draftConflict]);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -347,6 +365,7 @@ function GroupCardsPanel({ groupId, isDarkTheme }: { groupId: string; isDarkThem
         const created = await createCard(groupId, form, nextOrderIndex);
         setCards((current) => [...current, created]);
       }
+      clearDraft();
       setIsFormOpen(false);
     } catch {
       toast.error("Something went wrong. Please try again.");

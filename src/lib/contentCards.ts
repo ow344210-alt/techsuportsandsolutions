@@ -1,4 +1,5 @@
 import { supabase } from "../supabase/client";
+import { optimizeImageFile } from "./imageOptimization";
 
 export const PAGES = ["home", "about", "services", "process", "contact"] as const;
 export type PageKey = (typeof PAGES)[number];
@@ -169,12 +170,13 @@ export async function swapCardOrder(a: ContentCard, b: ContentCard): Promise<voi
 }
 
 export async function uploadCardImage(file: File): Promise<string> {
-  const fileExt = file.name.split(".").pop();
+  const optimized = await optimizeImageFile(file);
+  const fileExt = optimized.file.name.split(".").pop();
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from("content-images")
-    .upload(fileName, file, { cacheControl: "3600", upsert: false });
+    .upload(fileName, optimized.file, { cacheControl: "3600", upsert: false });
 
   if (uploadError) throw uploadError;
 

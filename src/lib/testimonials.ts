@@ -1,5 +1,6 @@
 import { supabase } from "../supabase/client";
 import { cachedQuery } from "./dataCache";
+import { optimizeImageFile } from "./imageOptimization";
 
 export interface Testimonial {
   id: string;
@@ -107,12 +108,13 @@ export async function swapTestimonialOrder(
 }
 
 export async function uploadTestimonialImage(file: File): Promise<string> {
-  const fileExt = file.name.split(".").pop();
+  const optimized = await optimizeImageFile(file);
+  const fileExt = optimized.file.name.split(".").pop();
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from("testimonial-images")
-    .upload(fileName, file, { cacheControl: "3600", upsert: false });
+    .upload(fileName, optimized.file, { cacheControl: "3600", upsert: false });
 
   if (uploadError) throw uploadError;
 

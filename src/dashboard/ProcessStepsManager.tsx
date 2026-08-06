@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useTheme } from "../context/ThemeContext.types";
+import { useFormDraft } from "../hooks/useFormDraft";
 import {
   createStep,
   deleteStep,
@@ -36,6 +37,22 @@ export default function ProcessStepsManager() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const { restored: draftRestored, isConflict: draftConflict, clear: clearDraft } = useFormDraft<ProcessStepPayload>({
+    formName: "process-step",
+    id: editingStep?.id ?? null,
+    values: form,
+    active: isFormOpen,
+    recordUpdatedAt: editingStep?.updated_at ?? null,
+    onRestore: (restoredValues) => {
+      setForm(restoredValues);
+      toast.success("Unsaved draft restored.");
+    },
+  });
+  useEffect(() => {
+    if (draftRestored && draftConflict) {
+      toast.error("This record was changed elsewhere after your draft was saved. Review before saving.");
+    }
+  }, [draftRestored, draftConflict]);
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -84,6 +101,7 @@ export default function ProcessStepsManager() {
         const created = await createStep(form, nextOrder);
         setSteps((current) => [...current, created]);
       }
+      clearDraft();
       setIsFormOpen(false);
     } catch {
       toast.error("Something went wrong. Please try again.");
